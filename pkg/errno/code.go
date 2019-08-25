@@ -8,7 +8,7 @@ var (
 
 	ErrValidation = &Errno{Code: 20001, Message: "Validation failed."}
 	ErrDatabase   = &Errno{Code: 20002, Message: "Database error."}
-	ErrToken      = &Errno{Code: 20003, Message: "Error occurred while signing the JSON web token."}
+	ErrToken      = &Errno{Code: 20003, Message: "Error occurred while generating token."}
 	ErrBadRequest = &Errno{Code: 20004, Message: "Error occurred while payload is not bad."}
 
 	// user errors
@@ -21,6 +21,9 @@ var (
 	// signup error
 	ErrUserSignupEmailInvalid = &Errno{Code: 20201, Message: "The email from payload is invalid."}
 	ErrUserExisted            = &Errno{Code: 20202, Message: "The user has existed."}
+
+	// signin error
+	ErrUserPasswordIncorrect = &Errno{Code: 20301, Message: "Password incorrect."}
 
 	// orm error
 	ErrUserCreate = &Errno{Code: 30001, Message: "The (*UserModel)Create() method error."}
