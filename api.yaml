@@ -1,0 +1,293 @@
+swagger: "2.0"
+info:
+  description: "This is the auth service for Muxi-X(Called 木犀内外)'s API document, please make sure you're using the python version server service."
+  version: "2.0.0"
+  title: "Auth Service v2"
+  termsOfService: "http://muxixyz.com/api/auth"
+  contact:
+    email: "muxistudio@qq.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "muxixyz.com"
+basePath: "/api/auth"
+tags:
+  - name: "auth"
+    description: "auth API"
+  - name: "profile"
+    description: "profile API"
+schemes:
+  - "https"
+  - "http"
+paths:
+  /signup:
+    post:
+      tags:
+        - "auth"
+      summary: "Signup a new account for Muxi-X."
+      description: "Please make sure your email haven't signup."
+      operationId: "user-signup"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Signup a user need username, email and passsword."
+          required: true
+          schema:
+            $ref: "#/definitions/UserSignup"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            required:
+              - id
+            properties:
+              id:
+                type: "integer"
+                format: "int64"
+        401:
+          description: "Username duplicated"
+        402:
+          description: "Email duplicated"
+        403:
+          description: "Bad Request"
+  /signin:
+    post:
+      tags:
+        - "auth"
+      summary: "Login for Muxi-X."
+      description: "Please make sure your username and password are right."
+      operationId: "user-login"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Login need username(indeed username or email) and password base64."
+          required: true
+          schema:
+            $ref: "#/definitions/UserLogin"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            required:
+              - user_id
+              - token
+            properties:
+              user_id:
+                type: "integer"
+                format: "int64"
+              token:
+                type: "string"
+        400:
+          description: "Password incorrect."
+        401:
+          description: "User not found or Bad Request."
+  /check_name:
+    get:
+      tags:
+        - "auth"
+      summary: "Check the username is using or not."
+      description: "Please make sure the query string you send include username."
+      operationId: "check-username"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "username"
+          in: "query"
+          description: "The username ready to check."
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "Username nobody using."
+        400:
+          description: "Username someone using it."
+  /check_email:
+    get:
+      tags:
+        - "auth"
+      summary: "Check the email is using or not."
+      description: "Please make sure the query string you send include email."
+      operationId: "check-email"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "email"
+          in: "query"
+          description: "The email ready to check."
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "Email nobody using."
+        400:
+          description: "Email someone using it."
+  /email:
+    get:
+      tags:
+        - "auth"
+      summary: "Get the email by username."
+      description: "Please make sure the query string you send include username."
+      operationId: "get-email"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "username"
+          in: "query"
+          description: "The username for getting email."
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            required:
+              - email
+            properties:
+              email:
+                type: "string"
+                format: "email"
+        404:
+          description: "User not found."
+  /password/get_captcha:
+    post:
+      tags:
+        - "auth"
+      summary: "Get captcha for reset password."
+      description: "Please make sure your email address are right."
+      operationId: "reset-getCaptcha"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Reset password need email address."
+          required: true
+          schema:
+            $ref: "#/definitions/GetCaptcha"
+      responses:
+        200:
+          description: "Captcha be sent."
+  /password/check_captcha:
+    post:
+      tags:
+        - "auth"
+      summary: "Post captcha for reset password."
+      description: "Please make sure your email address and captcha are right."
+      operationId: "reset-postCaptcha"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Reset password need email address."
+          required: true
+          schema:
+            $ref: "#/definitions/PostCaptcha"
+      responses:
+        200:
+          description: "Captcha is OK."
+        403:
+          description: "Bad Request"
+        404:
+          description: "User not found."
+  /password/reset:
+    post:
+      tags:
+        - "auth"
+      summary: "Reset the password."
+      description: "Reset password need captcha, email address and new password."
+      operationId: "reset-password"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Reset password need email address."
+          required: true
+          schema:
+            $ref: "#/definitions/ResetPassword"
+      responses:
+        200:
+          description: "Reset OK."
+        403:
+          description: "Bad Request"
+        404:
+          description: "User not found."
+definitions:
+  UserSignup:
+    type: "object"
+    required:
+      - "username"
+      - "email"
+      - "password"
+    properties:
+      username:
+        type: "string"
+      email:
+        type: "string"
+        format: "email"
+        example: "muxistudio@qq.com"
+      password:
+        type: "string"
+        format: "base64"
+  UserLogin:
+    type: "object"
+    required:
+      - "username"
+      - "password"
+    properties:
+      username:
+        type: "string"
+        example: "muxistudio or muxistudio@qq.com"
+      password:
+        type: "string"
+        format: "base64"
+  GetCaptcha:
+    type: "object"
+    required:
+      - "email"
+    properties:
+      email:
+        type: "string"
+        example: "email"
+  PostCaptcha:
+    type: "object"
+    required:
+      - "captcha"
+      - "email"
+    properties:
+      captcha:
+        type: "string"
+      email:
+        type: "string"
+        format: "email"
+        example: "muxistudio@qq.com"
+  ResetPassword:
+    type: "object"
+    required:
+      - "captcha"
+      - "email"
+      - "new_password"
+    properties:
+      captcha:
+        type: "string"
+      email:
+        type: "string"
+        format: "email"
+        example: "muxistudio@qq.com"
+      new_password:
+        type: "string"
