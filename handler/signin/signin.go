@@ -20,15 +20,19 @@ type UserSigninResponseData struct {
 
 func UserSignin(c *gin.Context) {
 	var data UserSigninRequestData
-	if err := c.BindJSON(&data); err != nil {
+	var err, newErr error
+	if err = c.BindJSON(&data); err != nil {
 		handler.SendBadRequest(c, nil, errno.ErrBadRequest, err.Error())
 		return
 	}
-
-	user, err := model.GetUserByUsername(data.Username)
+	var user *model.UserModel
+	user, err = model.GetUserByUsername(data.Username)
 	if err != nil {
-		handler.SendError(c, nil, errno.ErrUserNotFound, err.Error())
-		return
+		user, newErr = model.GetUserByEmail(data.Username)
+		if newErr != nil {
+			handler.SendError(c, nil, errno.ErrUserNotFound, err.Error())
+			return
+		}
 	}
 	if !user.CheckPassword(data.Password) {
 		handler.SendError(c, nil, errno.ErrUserPasswordIncorrect, "Password not match.")

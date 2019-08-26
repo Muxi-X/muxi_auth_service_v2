@@ -18,6 +18,7 @@ type Database struct {
 var DB *Database
 
 func openDB(username, password, addr, name string) *gorm.DB {
+	fmt.Println("Start to connect:", username, password, addr, name)
 	config := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=%t&loc=%s",
 		username,
 		password,
@@ -46,10 +47,10 @@ func setupDB(db *gorm.DB) {
 
 // used for cli
 func InitSelfDB() *gorm.DB {
-	return openDB(viper.GetString("USERNAME"),
-		viper.GetString("PASSWORD"),
-		viper.GetString("ADDR"),
-		viper.GetString("NAME"))
+	return openDB(viper.GetString("DB_USERNAME"),
+		viper.GetString("DB_PASSWORD"),
+		viper.GetString("DB_ADDR"),
+		viper.GetString("DB_NAME"))
 }
 
 func GetSelfDB() *gorm.DB {

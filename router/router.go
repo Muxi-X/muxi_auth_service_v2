@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/Muxi-X/muxi_auth_service_v2/handler/signin"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signup"
 	"net/http"
 
@@ -23,6 +24,7 @@ func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 	authRouter := g.Group("/auth/api")
 	{
 		authRouter.POST("/signup", signup.UserSignup)
+		authRouter.POST("/signin", signin.UserSignin)
 	}
 
 	// The health check handlers

@@ -23,13 +23,13 @@ type UserModel struct {
 	AvatarURL    string `json:"avatar_url"column:"avatar_url"`
 	PersonalBlog string `json:"personal_blog"column:"personal_blog"`
 	Github       string `json:"github"column:"github"`
-	Filckr       string `json:"filckr"column:"filckr"`
+	Flickr       string `json:"flickr"column:"flickr"`
 	Weibo        string `json:"weibo"column:"weibo"`
 	Zhihu        string `json:"zhihu"column:"zhihu"`
 }
 
 func (c *UserModel) TableName() string {
-	return "tb_users"
+	return "users"
 }
 
 // Create creates a new user account.

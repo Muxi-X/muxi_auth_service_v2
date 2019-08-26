@@ -30,9 +30,12 @@ func UserSignup(c *gin.Context) {
 	}
 
 	sameEmailChannel, sameUsernameChannel := make(chan bool), make(chan bool)
+	defer close(sameEmailChannel)
+	defer close(sameUsernameChannel)
+
 	go func(email string) {
 		_, err := model.GetUserByEmail(email)
-		if err != nil {
+		if err != nil { // user not found
 			sameEmailChannel <- true
 		} else {
 			sameEmailChannel <- false
@@ -40,15 +43,17 @@ func UserSignup(c *gin.Context) {
 	}(data.Email)
 	go func(username string) {
 		_, err := model.GetUserByUsername(username)
-		if err != nil {
+		if err != nil { // user not found
 			sameUsernameChannel <- true
 		} else {
 			sameUsernameChannel <- false
 		}
 	}(data.Username)
 
-	if <-sameEmailChannel || <-sameUsernameChannel {
+	if !<-sameEmailChannel || !<-sameUsernameChannel {
 		handler.SendError(c, errno.ErrUserExisted, nil, "Email or Username duplicated.")
+		close(sameUsernameChannel)
+		close(sameEmailChannel)
 		return
 	}
 
@@ -75,7 +80,7 @@ func UserSignup(c *gin.Context) {
 		AvatarURL:    "",
 		PersonalBlog: "",
 		Github:       "",
-		Filckr:       "",
+		Flickr:       "",
 		Weibo:        "",
 		Zhihu:        "",
 	}
