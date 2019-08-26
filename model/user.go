@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/base64"
+	"fmt"
 	"github.com/Muxi-X/muxi_auth_service_v2/util/captcha"
 	"github.com/ShiinaOrez/GoSecurity/security"
 )
@@ -101,7 +102,9 @@ func GetEmailByUsername(username string) (string, error) {
 func (user *UserModel) VerifyCaptcha(newCap string) bool {
 	oldCap, err := captcha.ResolveCaptchaToken(user.ResetT)
 	if err != nil {
+		fmt.Println(err.Error())
 		return false
 	}
+	fmt.Println(oldCap, newCap)
 	return oldCap == newCap
 }

@@ -29,6 +29,9 @@ var (
 	ErrMailSend             = &Errno{Code: 20401, Message: "Mail send failed."}
 	ErrGenerateCaptchaToken = &Errno{Code: 20402, Message: "Generating captcha token failed."}
 
+	// captcha error
+	ErrUserVerifyFail = &Errno{Code: 20501, Message: "Verify captcha token failed."}
+
 	// orm error
 	ErrUserCreate = &Errno{Code: 30001, Message: "The (*UserModel)Create() method error."}
 	ErrUserUpdate = &Errno{Code: 30002, Message: "The (*UserModel)Update() method error."}

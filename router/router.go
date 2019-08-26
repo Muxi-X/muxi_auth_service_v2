@@ -32,6 +32,7 @@ func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 		authRouter.GET("/check_email", check.CheckEmailExisted)
 		authRouter.GET("/email", email.GetEmailByUsername)
 		authRouter.POST("/password/get_captcha", password.GetCaptcha)
+		authRouter.POST("/password/check_captcha", password.CheckCaptcha)
 	}
 
 	// The health check handlers
