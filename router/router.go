@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/check"
+	"github.com/Muxi-X/muxi_auth_service_v2/handler/email"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signin"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signup"
 	"net/http"
@@ -28,6 +29,7 @@ func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 		authRouter.POST("/signin", signin.UserSignin)
 		authRouter.GET("/check_name", check.CheckUsernameExisted)
 		authRouter.GET("/check_email", check.CheckEmailExisted)
+		authRouter.GET("/email", email.GetEmailByUsername)
 	}
 
 	// The health check handlers

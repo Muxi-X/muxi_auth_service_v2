@@ -47,6 +47,16 @@ func SendBadRequest(c *gin.Context, err error, data interface{}, cause string) {
 	})
 }
 
+func SendNotFound(c *gin.Context, err error, data interface{}, cause string) {
+	code, message := errno.DecodeErr(err)
+	log.Info(message, lager.Data{"X-Request-Id": util.GetReqID(c), "cause": cause})
+	c.JSON(http.StatusNotFound, Response{
+		Code:    code,
+		Message: message + ": " + cause,
+		Data:    data,
+	})
+}
+
 func SendError(c *gin.Context, err error, data interface{}, cause string) {
 	code, message := errno.DecodeErr(err)
 	log.Info(message, lager.Data{"X-Request-Id": util.GetReqID(c), "cause": cause})

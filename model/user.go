@@ -90,3 +90,9 @@ func GetUserByUsername(username string) (*UserModel, error) {
 	d := DB.Self.Where("username = ?", username).First(&user)
 	return user, d.Error
 }
+
+func GetEmailByUsername(username string) (string, error) {
+	user := &UserModel{}
+	d := DB.Self.Select("email").Where("username = ?", username).First(&user)
+	return user.Email, d.Error
+}
