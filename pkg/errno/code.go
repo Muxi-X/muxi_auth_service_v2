@@ -25,6 +25,11 @@ var (
 	// signin error
 	ErrUserPasswordIncorrect = &Errno{Code: 20301, Message: "Password incorrect."}
 
+	// mail error
+	ErrMailSend             = &Errno{Code: 20401, Message: "Mail send failed."}
+	ErrGenerateCaptchaToken = &Errno{Code: 20402, Message: "Generating captcha token failed."}
+
 	// orm error
 	ErrUserCreate = &Errno{Code: 30001, Message: "The (*UserModel)Create() method error."}
+	ErrUserUpdate = &Errno{Code: 30002, Message: "The (*UserModel)Update() method error."}
 )

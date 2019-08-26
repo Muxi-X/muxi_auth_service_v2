@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/base64"
+	"github.com/Muxi-X/muxi_auth_service_v2/util/captcha"
 	"github.com/ShiinaOrez/GoSecurity/security"
 )
 
@@ -95,4 +96,12 @@ func GetEmailByUsername(username string) (string, error) {
 	user := &UserModel{}
 	d := DB.Self.Select("email").Where("username = ?", username).First(&user)
 	return user.Email, d.Error
+}
+
+func (user *UserModel) VerifyCaptcha(newCap string) bool {
+	oldCap, err := captcha.ResolveCaptchaToken(user.ResetT)
+	if err != nil {
+		return false
+	}
+	return oldCap == newCap
 }
