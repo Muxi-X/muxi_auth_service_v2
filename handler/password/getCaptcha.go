@@ -34,9 +34,9 @@ func GetCaptcha(c *gin.Context) {
 			defer close(userUpdateErrorChan)
 
 			go func() {
-				mailSendErrorChan <- smtpMail.SendMail("shiina_orez@qq.com", viper.GetString("AUTHCODE"), []string{email}, smtpMail.Content{
+				mailSendErrorChan <- smtpMail.SendMail("muxistudio@qq.com", viper.GetString("AUTHCODE"), []string{email}, smtpMail.Content{
 					NickName:    "Muxi Studio: Auth Service",
-					User:        "shiina_orez@qq.com",
+					User:        "muxistudio@qq.com",
 					Subject:     "Auth Code For Password Reseting: 密码重置",
 					Body:        mailContent,
 					ContentType: "Content-Type: text/html; charset=UTF-8",
