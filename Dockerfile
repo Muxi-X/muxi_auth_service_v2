@@ -1,6 +1,6 @@
 FROM golang:latest 
-RUN mkdir /app 
-ADD . /app/ 
-WORKDIR /app 
-RUN go build --mod vendor -o main . 
-CMD ["/app/main"]
+RUN mkdir $GOPATH/src/github.com/Muxi-X/muxi_auth_service_v2 
+ADD . $GOPATH/src/github.com/Muxi-X/muxi_auth_service_v2
+WORKDIR $GOPATH/src/github.com/Muxi-X/muxi_auth_service_v2
+RUN go build -o main . 
+CMD ["./main"]
