@@ -85,6 +85,7 @@ github.com/ugorji/go/codec
 # github.com/willf/pad v0.0.0-20160331131008-b3d780601022
 github.com/willf/pad
 # golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9
+github.com/Shiina/GoSecurity
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
 # golang.org/x/sys v0.0.0-20181205085412-a5c9d58dba9a
