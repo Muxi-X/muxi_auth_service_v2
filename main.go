@@ -59,7 +59,7 @@ func main() {
 func pingServer() error {
 	for i := 0; i < viper.GetInt("max_ping_count"); i++ {
 		// Ping the server by sending a GET request to `/health`.
-		resp, err := http.Get("http://127.0.0.1" + viper.GetString("addr") + "/sd/health")
+		resp, err := http.Get(viper.GetString("addr") + "/sd/health")
 		if err == nil && resp.StatusCode == 200 {
 			return nil
 		} else {
