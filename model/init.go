@@ -47,10 +47,10 @@ func setupDB(db *gorm.DB) {
 
 // used for cli
 func InitSelfDB() *gorm.DB {
-	return openDB(viper.GetString("DB_USERNAME"),
-		viper.GetString("DB_PASSWORD"),
-		viper.GetString("DB_ADDR"),
-		viper.GetString("DB_NAME"))
+	return openDB(viper.GetString("db.username"),
+		viper.GetString("db.password"),
+		viper.GetString("db.addr"),
+		viper.GetString("db.name"))
 }
 
 func GetSelfDB() *gorm.DB {
