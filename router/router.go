@@ -6,6 +6,7 @@ import (
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/password"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signin"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signup"
+	"github.com/gin-contrib/cors"
 	"net/http"
 
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/sd"
@@ -15,7 +16,10 @@ import (
 // Load loads the middlewares, routes, handlers.
 func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 	// Middlewares.
-	g.Use(gin.Recovery())
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+
+	g.Use(gin.Recovery(), cors.New(config))
 	g.Use(mw...)
 	// 404 Handler.
 	g.NoRoute(func(c *gin.Context) {
