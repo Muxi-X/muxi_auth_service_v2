@@ -1,6 +1,7 @@
 package password
 
 import (
+	"fmt"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
 	"github.com/Muxi-X/muxi_auth_service_v2/model"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
@@ -34,13 +35,15 @@ func GetCaptcha(c *gin.Context) {
 			defer close(userUpdateErrorChan)
 
 			go func() {
-				mailSendErrorChan <- smtpMail.SendMail("muxistudio@qq.com", viper.GetString("AUTHCODE"), []string{email}, smtpMail.Content{
+				fmt.Println("Start to send email.", viper.GetString("authcode"))
+				mailSendErrorChan <- smtpMail.SendMail("muxistudio@qq.com", viper.GetString("authcode"), []string{email}, smtpMail.Content{
 					NickName:    "Muxi Studio: Auth Service",
 					User:        "muxistudio@qq.com",
 					Subject:     "Auth Code For Password Reseting: 密码重置",
 					Body:        mailContent,
 					ContentType: "Content-Type: text/html; charset=UTF-8",
 				})
+				fmt.Println("Sent")
 			}()
 
 			captchaToken, newErr := captcha.GenerateCaptchaToken(captchaCode)
