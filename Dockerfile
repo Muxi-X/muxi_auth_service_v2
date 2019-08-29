@@ -7,5 +7,5 @@ CMD ["mkdir", "$GOPATH/src"] \
 ADD . $GOPATH/src/github.com/Muxi-X/muxi_auth_service_v2
 WORKDIR $GOPATH/src/github.com/Muxi-X/muxi_auth_service_v2
 RUN go build -o main . 
-EXPOSE 8033
+EXPOSE 8033 25 465
 CMD ["./main"]
