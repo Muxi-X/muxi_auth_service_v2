@@ -34,6 +34,7 @@ func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 		authRouter.POST("/signin", signin.UserSignin)
 		authRouter.GET("/check_name", check.CheckUsernameExisted)
 		authRouter.GET("/check_email", check.CheckEmailExisted)
+		authRouter.GET("/check_token", check.CheckToken)
 		authRouter.GET("/email", email.GetEmailByUsername)
 		authRouter.POST("/password/get_captcha", password.GetCaptcha)
 		authRouter.POST("/password/check_captcha", password.CheckCaptcha)

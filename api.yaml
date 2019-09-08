@@ -129,6 +129,35 @@ paths:
           description: "Email nobody using."
         400:
           description: "Email someone using it."
+  /check_token:
+    get:
+      tags:
+        - "auth"
+      summary: "Check the token and email is valid or not."
+      description: "Please add the token and email to the query parameters"
+      operationId: "check-token"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "email"
+          in: "query"
+          description: "The email to check."
+          required: true
+          type: "string"
+        - name: "token"
+          in: "query"
+          description: "The token to check"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "OK"
+        400:
+          description: "Bad Request"
+        404:
+          description: "User not found"
+        500:
+          description: "Internal error."
   /email:
     get:
       tags:
