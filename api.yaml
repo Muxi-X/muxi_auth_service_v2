@@ -9,8 +9,8 @@ info:
   license:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
-host: "muxixyz.com"
-basePath: "/api/auth"
+host: "pass2.muxixyz.com"
+basePath: "/auth/api"
 tags:
   - name: "auth"
     description: "auth API"
