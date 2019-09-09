@@ -9,12 +9,17 @@ import (
 )
 
 func CheckToken(c *gin.Context) {
-	token := c.Param("token")
-	email := c.Param("email")
-	if token == "" || email == "" {
-		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "Token and email are required.")
+	var token, email string
+	var ok bool
+	if token, ok = c.GetQuery("token"); !ok {
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "Token is required.")
 		return
 	}
+	if email, ok = c.GetQuery("email"); !ok {
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "Email is required.")
+		return
+	}
+
 	tokenResolve, err := auth.ResolveToken(token)
 	if err != nil {
 		handler.SendError(c, errno.ErrTokenInvalid, nil, err.Error())
