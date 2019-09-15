@@ -6,6 +6,7 @@ import (
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/auth"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
 	"github.com/gin-gonic/gin"
+	"fmt"
 )
 
 func CheckToken(c *gin.Context) {
@@ -22,6 +23,9 @@ func CheckToken(c *gin.Context) {
 
 	tokenResolve, err := auth.ResolveToken(token)
 	if err != nil {
+		fmt.Println("[email]:", email)
+		fmt.Println("[token]:", token)
+		fmt.Println("[error]:", err.Error())
 		handler.SendError(c, errno.ErrTokenInvalid, nil, err.Error())
 		return
 	}
