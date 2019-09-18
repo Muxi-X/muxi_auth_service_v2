@@ -7,7 +7,7 @@ gotool:
 	gofmt -w .
 	go tool vet . | grep -v vendor;true
 test:
-	@go test -v -count=1  ./...
+	@go test -v .
 ca:
 	openssl req -new -nodes -x509 -out conf/server.crt -keyout conf/server.key -days 3650 -subj "/C=DE/ST=NRW/L=Earth/O=Random Company/OU=IT/CN=127.0.0.1/emailAddress=xxxxx@qq.com"
 

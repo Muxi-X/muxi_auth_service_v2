@@ -1,8 +1,29 @@
 language: go
+sudo: required
+dist: trusty
 
 go:
+  - 1.10.x
   - 1.11.x
-script: make test
+
+env:
+  - MUXI_AUTH_DB_NAME=muxisite_auth
+  - MUXI_AUTH_DB_USERNAME=root
+  - MUXI_AUTH_DB_ADDR=127.0.0.1:3306
+  - MUXI_AUTH_SECRET=TheS4Ci
+  - MUXI_AUTH_DB_PASSWORD=
+
+before_script:
+  - mysql -u root --password="" < db.sql
+
+script:
+  - go get github.com/spf13/viper
+  - go get github.com/spf13/pflag
+  - go get github.com/lexkong/log
+  - go get github.com/gin-gonic/gin
+  - go get github.com/jinzhu/gorm
+  - go get github.com/jinzhu/gorm/dialects/mysql
+  - make test
 
 services:
   - mysql
@@ -13,10 +34,3 @@ addons:
       - mysql-5.7-trusty
     packages:
       - mysql-server
-
-dist: trusty
-
-sudo: required
-
-before_script:
-  - mysql -u root --password="" < db.sql
