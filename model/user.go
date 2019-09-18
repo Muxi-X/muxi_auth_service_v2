@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/base64"
 	"fmt"
+
 	"github.com/Muxi-X/muxi_auth_service_v2/util/captcha"
 	"github.com/ShiinaOrez/GoSecurity/security"
 )
@@ -10,24 +11,24 @@ import (
 // User represents a registered user.
 type UserModel struct {
 	BaseModel
-	Email        string `json:"email"column:"email"`
-	Birthday     string `json:"birthday"column:"birthday"`
-	Hometown     string `json:"hometown"column:"hometown"`
-	Group        string `json:"group"column:"group"`
-	Timejoin     string `json:"timejoin"column:"timejoin"`
-	Timeleft     string `json:"timeleft"column:"timeleft"`
-	Username     string `json:"username"column:"username"`
-	PasswordHash string `json:"password_hash"column:"password_hash"`
-	RoleID       uint64 `json:"role_id"column:"role_id"`
-	Left         bool   `json:"left"column:"left"`
-	ResetT       string `json:"reset_t"column:"reste_t"`
-	Info         string `json:"info"column:"info"`
-	AvatarURL    string `json:"avatar_url"column:"avatar_url"`
-	PersonalBlog string `json:"personal_blog"column:"personal_blog"`
-	Github       string `json:"github"column:"github"`
-	Flickr       string `json:"flickr"column:"flickr"`
-	Weibo        string `json:"weibo"column:"weibo"`
-	Zhihu        string `json:"zhihu"column:"zhihu"`
+	Email        string `json:"email" column:"email"`
+	Birthday     string `json:"birthday" column:"birthday"`
+	Hometown     string `json:"hometown" column:"hometown"`
+	Group        string `json:"group" column:"group"`
+	Timejoin     string `json:"timejoin" column:"timejoin"`
+	Timeleft     string `json:"timeleft" column:"timeleft"`
+	Username     string `json:"username" column:"username"`
+	PasswordHash string `json:"password_hash" column:"password_hash"`
+	RoleID       uint64 `json:"role_id" column:"role_id"`
+	Left         bool   `json:"left" column:"left"`
+	ResetT       string `json:"reset_t" column:"reste_t"`
+	Info         string `json:"info" column:"info"`
+	AvatarURL    string `json:"avatar_url" column:"avatar_url"`
+	PersonalBlog string `json:"personal_blog" column:"personal_blog"`
+	Github       string `json:"github" column:"github"`
+	Flickr       string `json:"flickr" column:"flickr"`
+	Weibo        string `json:"weibo" column:"weibo"`
+	Zhihu        string `json:"zhihu" column:"zhihu"`
 }
 
 func (c *UserModel) TableName() string {
