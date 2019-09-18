@@ -22,7 +22,7 @@ func UserSignin(c *gin.Context) {
 	var data UserSigninRequestData
 	var err, newErr error
 	if err = c.BindJSON(&data); err != nil {
-		handler.SendBadRequest(c, nil, errno.ErrBadRequest, err.Error())
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, err.Error())
 		return
 	}
 	var user *model.UserModel
@@ -30,12 +30,12 @@ func UserSignin(c *gin.Context) {
 	if err != nil {
 		user, newErr = model.GetUserByEmail(data.Username)
 		if newErr != nil {
-			handler.SendError(c, nil, errno.ErrUserNotFound, err.Error())
+			handler.SendError(c, errno.ErrUserNotFound, nil, err.Error())
 			return
 		}
 	}
 	if !user.CheckPassword(data.Password) {
-		handler.SendError(c, nil, errno.ErrUserPasswordIncorrect, "Password not match.")
+		handler.SendError(c, errno.ErrUserPasswordIncorrect, nil, "Password not match.")
 		return
 	}
 	token, err := auth.GenerateToken(auth.TokenPayload{
@@ -43,7 +43,7 @@ func UserSignin(c *gin.Context) {
 		Expire: 604800,
 	})
 	if err != nil {
-		handler.SendError(c, nil, errno.ErrToken, err.Error())
+		handler.SendError(c, errno.ErrToken, nil, err.Error())
 		return
 	}
 	handler.SendResponse(c, nil, UserSigninResponseData{

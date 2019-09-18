@@ -21,7 +21,7 @@ func CheckEmailExisted(c *gin.Context) {
 	if !flag {
 		handler.SendResponse(c, nil, flag)
 	} else {
-		handler.SendBadRequest(c, nil, flag, "User existed.")
+		handler.SendError(c, nil, flag, "User existed.")
 	}
 	return
 }
