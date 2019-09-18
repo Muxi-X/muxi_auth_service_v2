@@ -1,12 +1,12 @@
 package check
 
 import (
+	"fmt"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
 	"github.com/Muxi-X/muxi_auth_service_v2/model"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/auth"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
 	"github.com/gin-gonic/gin"
-	"fmt"
 )
 
 func CheckToken(c *gin.Context) {

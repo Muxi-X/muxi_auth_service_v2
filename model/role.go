@@ -2,14 +2,15 @@ package model
 
 import (
 	"fmt"
+
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
 )
 
 type Role struct {
 	BaseModel
-	Name        string `json:"name"column:"name"`
-	Default     bool   `json:"default"column:"default"`
-	Permissions uint64 `json:"permissions"column:"permissions"`
+	Name        string `json:"name" column:"name"`
+	Default     bool   `json:"default" column:"default"`
+	Permissions uint64 `json:"permissions" column:"permissions"`
 }
 
 func (role *Role) TableName() string {
