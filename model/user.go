@@ -11,14 +11,14 @@ import (
 // User represents a registered user.
 type UserModel struct {
 	BaseModel
-	Email        string `json:"email" column:"email"`
+	Email        string `json:"email" column:"email" binding:"required"`
 	Birthday     string `json:"birthday" column:"birthday"`
 	Hometown     string `json:"hometown" column:"hometown"`
 	Group        string `json:"group" column:"group"`
 	Timejoin     string `json:"timejoin" column:"timejoin"`
 	Timeleft     string `json:"timeleft" column:"timeleft"`
-	Username     string `json:"username" column:"username"`
-	PasswordHash string `json:"password_hash" column:"password_hash"`
+	Username     string `json:"username" column:"username" binding:"required"`
+	PasswordHash string `json:"password_hash" column:"password_hash" binding:"required"`
 	RoleID       uint64 `json:"role_id" column:"role_id"`
 	Left         bool   `json:"left" column:"left"`
 	ResetT       string `json:"reset_t" column:"reste_t"`
