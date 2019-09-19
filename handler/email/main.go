@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 根据用户名获取邮箱
 func GetEmailByUsername(c *gin.Context) {
 	if username, ok := c.GetQuery("username"); !ok {
 		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "Bad Request: Required username in query string.")
@@ -14,7 +15,7 @@ func GetEmailByUsername(c *gin.Context) {
 	} else {
 		email, err := model.GetEmailByUsername(username)
 		if err != nil {
-			handler.SendNotFound(c, errno.ErrUserNotFound, nil, err.Error())
+			handler.SendResponse(c, errno.ErrUserNotFound, nil)
 			return
 		} else {
 			handler.SendResponse(c, nil, struct {

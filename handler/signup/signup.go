@@ -40,7 +40,7 @@ func UserSignup(c *gin.Context) {
 
 	go func(email string) {
 		_, err := model.GetUserByEmail(email)
-		if err != nil { // user not found
+		if err != nil { // email not found
 			sameEmailChannel <- true
 		} else {
 			sameEmailChannel <- false

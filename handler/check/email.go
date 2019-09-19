@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 检查邮箱是否存在
 func CheckEmailExisted(c *gin.Context) {
 	flag := false
 	if email, ok := c.GetQuery("email"); !ok {

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 检查用户名是否存在
 func CheckUsernameExisted(c *gin.Context) {
 	flag := false
 	if username, ok := c.GetQuery("username"); !ok {
@@ -18,10 +19,7 @@ func CheckUsernameExisted(c *gin.Context) {
 			flag = true
 		}
 	}
-	if !flag {
-		handler.SendResponse(c, nil, flag)
-	} else {
-		handler.SendError(c, nil, flag, "User existed.")
-	}
+
+	handler.SendResponse(c, nil, flag)
 	return
 }
