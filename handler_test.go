@@ -1,7 +1,8 @@
 package main
 
 import (
-	_ "fmt"
+	"github.com/Muxi-X/muxi_auth_service_v2/handler"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signin"
 	_ "github.com/Muxi-X/muxi_auth_service_v2/handler/signup"
 	"github.com/Muxi-X/muxi_auth_service_v2/router"
@@ -11,6 +12,7 @@ import (
 	"github.com/Muxi-X/muxi_auth_service_v2/config"
 	"github.com/spf13/pflag"
 
+	"os"
 	"bytes"
 	"encoding/base64"
 	"testing"
@@ -24,11 +26,8 @@ var (
 	token      string
 	captcha    string
 )
-func closeDB() {
-	model.DB.Close()
-}
 
-func Test_A_Build(t *testing.T) {
+func TestMain(m *testing.M) {
 	pflag.Parse()
 
 	if err := config.Init(*cfg); err != nil {
@@ -36,9 +35,12 @@ func Test_A_Build(t *testing.T) {
 	}
 
 	model.DB.Init()
+	defer model.DB.Close()
 
 	testRouter = gin.Default()
 	router.Load(testRouter)
+
+	os.Exit(m.Run())
 }
 
 /* func Test_B_SignUp(t *testing.T) {
@@ -56,27 +58,39 @@ func Test_A_Build(t *testing.T) {
     assert.Equal(t, 200, w.Code)
 } */
 
-func Test_C_SignIn(t *testing.T) {
+func sendTestRequest(method, path string, data interface{}) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
-	singinMock := signin.UserSigninRequestData{
+	jsonify, _ := json.Marshal(data)
+	req, _ := http.NewRequest(method, path, bytes.NewBuffer(jsonify))
+	testRouter.ServeHTTP(w, req)
+	return w
+}
+
+func getValueFromResponse(t *testing.T, bytes []byte, data interface{}, key string) interface{} {
+	err := json.Unmarshal(bytes, &data)
+	assert.Equal(t, err, nil)
+
+	return data.(map[string]interface{})["data"].(map[string]interface{})[key]
+}
+
+func getCodeFromError(t *testing.T, bytes []byte) int {
+	responseErr := errno.Err{}
+	err := json.Unmarshal(bytes, &responseErr)
+	assert.Equal(t, err, nil)
+
+	return responseErr.Code
+}
+
+func Test_C_SignIn(t *testing.T) {
+	signinMock := signin.UserSigninRequestData{
 		Username: "testMockUser2",
 		Password: base64.StdEncoding.EncodeToString([]byte("testMockPassword2")),
 	}
-	jsonify, _ := json.Marshal(singinMock)
-	req, _ := http.NewRequest("POST", "/auth/api/signin", bytes.NewBuffer(jsonify))
-
-	testRouter.ServeHTTP(w, req)
+	w := sendTestRequest("POST", "/auth/api/signin", signinMock)
 	assert.Equal(t, 200, w.Code)
 
-	var data struct{
-		Code    int                           `json:"code"`
-		Message string                        `json:"message"`
-		Data    signin.UserSigninResponseData `json:"data"`
-	}
-	err := json.Unmarshal(w.Body.Bytes(), &data)
-	assert.Equal(t, err, nil)
-
-	token = data.Data.Token
+	var data handler.Response
+	token = getValueFromResponse(t, w.Body.Bytes(), data, "token").(string)
 }
 
 func Test_D_A_CheckEmail(t *testing.T) {
@@ -112,7 +126,16 @@ func Test_E_A_CheckUsername(t *testing.T) {
 
 	testRouter.ServeHTTP(w, req)
 
-	assert.Equal(t, 500, w.Code)
+	assert.Equal(t, 200, w.Code)
+
+	var data struct{
+		Code    int      `json:"code"`
+		Message string   `json:"message"`
+		Data    bool     `json:"data"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &data)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, true, data.Data)
 }
 
 func Test_E_B_CheckUsername(t *testing.T) {
@@ -161,9 +184,14 @@ func Test_G_B_GetEmailByName(t *testing.T) {
 
 	testRouter.ServeHTTP(w, req)
 
-	assert.Equal(t, 404, w.Code)
-}
+	assert.Equal(t, 200, w.Code)
 
-func Test_Z_CloseDB(t *testing.T) {
-	closeDB()
+	var data struct{
+		Code    int           `json:"code"`
+		Message string        `json:"message"`
+	}
+
+	err := json.Unmarshal(w.Body.Bytes(), &data)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, 20102, data.Code)
 }
