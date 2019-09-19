@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -29,7 +28,7 @@ func main() {
 
 	// init db
 	model.DB.Init()
-	fmt.Println("[GIN-debug] Database:", model.DB)
+
 	defer model.DB.Close()
 
 	// Set gin mode.
