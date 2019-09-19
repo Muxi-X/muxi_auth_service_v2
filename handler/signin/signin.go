@@ -9,8 +9,8 @@ import (
 )
 
 type UserSigninRequestData struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 type UserSigninResponseData struct {
@@ -18,34 +18,42 @@ type UserSigninResponseData struct {
 	Token  string `json:"token"`
 }
 
+// 用户登录
 func UserSignin(c *gin.Context) {
-	var data UserSigninRequestData
-	var err, newErr error
+	var (
+		data UserSigninRequestData
+		err  error
+		user *model.UserModel
+	)
+
 	if err = c.BindJSON(&data); err != nil {
 		handler.SendBadRequest(c, errno.ErrBadRequest, nil, err.Error())
 		return
 	}
-	var user *model.UserModel
+
 	user, err = model.GetUserByUsername(data.Username)
 	if err != nil {
-		user, newErr = model.GetUserByEmail(data.Username)
-		if newErr != nil {
-			handler.SendError(c, errno.ErrUserNotFound, nil, err.Error())
+		user, err = model.GetUserByEmail(data.Username)
+		if err != nil {
+			handler.SendResponse(c, errno.ErrUserNotFound, nil)
 			return
 		}
 	}
+
 	if !user.CheckPassword(data.Password) {
-		handler.SendError(c, errno.ErrUserPasswordIncorrect, nil, "Password not match.")
+		handler.SendResponse(c, errno.ErrUserPasswordIncorrect, nil)
 		return
 	}
+
 	token, err := auth.GenerateToken(auth.TokenPayload{
 		ID:     user.Id,
-		Expire: 604800,
+		Expire: 7 * 60 * 60 * 24, // 有效时间七天
 	})
 	if err != nil {
 		handler.SendError(c, errno.ErrToken, nil, err.Error())
 		return
 	}
+
 	handler.SendResponse(c, nil, UserSigninResponseData{
 		UserID: user.Id,
 		Token:  token,
