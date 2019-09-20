@@ -1,5 +1,7 @@
 package constvar
 
+import "github.com/gin-gonic/gin"
+
 const (
 	DefaultLimit = 50
 	EmailTemp    = `<table border="0" cellspacing="0" cellpadding="0" style="max-width: 600px;">
@@ -82,4 +84,9 @@ const (
 			</tr>
 		</tbody>
 	</table>`
+)
+
+var (
+	TestRouter *gin.Engine
+	Token      string
 )
