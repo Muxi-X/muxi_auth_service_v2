@@ -2,16 +2,16 @@ package main
 
 import (
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
-	"github.com/Muxi-X/muxi_auth_service_v2/util"
-	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
-	_ "github.com/Muxi-X/muxi_auth_service_v2/handler/signup"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signin"
+	_ "github.com/Muxi-X/muxi_auth_service_v2/handler/signup"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
+	"github.com/Muxi-X/muxi_auth_service_v2/util"
 	"github.com/stretchr/testify/assert"
 
-	"testing"
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
-	"encoding/base64"
+	"testing"
 )
 
 /* func Test_B_SignUp(t *testing.T) {
@@ -99,7 +99,7 @@ func Test_F_CheckToken(t *testing.T) {
 	query.Add("token", constvar.Token)
 	req.URL.RawQuery = query.Encode()
 
-    constvar.TestRouter.ServeHTTP(w, req)
+	constvar.TestRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
 }

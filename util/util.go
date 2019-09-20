@@ -1,17 +1,16 @@
 package util
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/teris-io/shortid"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/teris-io/shortid"
 
-
-	"net/http/httptest"
+	"bytes"
 	"encoding/json"
 	"net/http"
-	"bytes"
+	"net/http/httptest"
 	"testing"
 )
 

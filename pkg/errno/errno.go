@@ -13,9 +13,9 @@ func (err Errno) Error() string {
 
 // Err represents an error
 type Err struct {
-	Code    int     `json:"code"`
-	Message string  `json:"message"`
-	Err     error   `json:"err"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Err     error  `json:"err"`
 }
 
 func New(errno *Errno, err error) *Err {
