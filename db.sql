@@ -1,4 +1,6 @@
-CREATE DATABASE `muxisite_auth` /*!40100 DEFAULT CHARACTER SET utf8mb4 */
+CREATE DATABASE `muxisite_auth`;
+
+USE `muxisite_auth`;
 
 CREATE TABLE `roles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
