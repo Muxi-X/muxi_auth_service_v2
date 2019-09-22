@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signin"
-	_ "github.com/Muxi-X/muxi_auth_service_v2/handler/signup"
+	"github.com/Muxi-X/muxi_auth_service_v2/handler/signup"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
 	"github.com/Muxi-X/muxi_auth_service_v2/util"
 	"github.com/stretchr/testify/assert"
@@ -14,20 +14,15 @@ import (
 	"testing"
 )
 
-/* func Test_B_SignUp(t *testing.T) {
-    w := httptest.NewRecorder()
+func Test_B_SignUp(t *testing.T) {
     signupMock := signup.UserSignupRequestData {
 		Username: "testMockUser2",
 		Email: "testUser2@mock.com",
 		Password: base64.StdEncoding.EncodeToString([]byte("testMockPassword2")),
 	}
-    jsonify, _ := json.Marshal(signupMock)
-    req, _ := http.NewRequest("POST", "/auth/api/signup", bytes.NewBuffer(jsonify))
-
-    testRouter.ServeHTTP(w, req)
-
+	w := util.SendTestRequest("POST", "/auth/api/signup", signupMock)
     assert.Equal(t, 200, w.Code)
-} */
+}
 
 func Test_C_SignIn(t *testing.T) {
 	signinMock := signin.UserSigninRequestData{
