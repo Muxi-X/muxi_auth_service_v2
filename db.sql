@@ -13,6 +13,15 @@ CREATE TABLE `roles` (
   KEY `ix_roles_default` (`default`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
 
+INSERT INTO `roles` (`name`, `default`, `permissions`)
+VALUES ('Moderator', 0, 14);
+
+INSERT INTO `roles` (`name`, `default`, `permissions`)
+VALUES ('Administrator', 0, 255);
+
+INSERT INTO `roles` (`name`, `default`, `permissions`)
+VALUES ('User', 1, 6);
+
 CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `email` varchar(164) DEFAULT NULL,
