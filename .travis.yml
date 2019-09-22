@@ -6,13 +6,6 @@ go:
   - 1.10.x
   - 1.11.x
 
-env:
-  - MUXI_AUTH_DB_NAME=muxisite_auth
-  - MUXI_AUTH_DB_USERNAME=root
-  - MUXI_AUTH_DB_ADDR=127.0.0.1:3306
-  - MUXI_AUTH_SECRET=TheS4Ci
-  - MUXI_AUTH_DB_PASSWORD=
-
 before_script:
   - mysql -u root --password="" < db.sql
 
