@@ -34,33 +34,65 @@ func UserSignup(c *gin.Context) {
 		return
 	}
 
-	sameEmailChannel, sameUsernameChannel := make(chan bool), make(chan bool)
+	sameEmailChannel, sameUsernameChannel, done := make(chan bool), make(chan bool), make(chan struct{})
 	defer close(sameEmailChannel)
 	defer close(sameUsernameChannel)
 
 	go func(email string) {
 		_, err := model.GetUserByEmail(email)
-		if err != nil { // email not found
-			sameEmailChannel <- true
-		} else {
-			sameEmailChannel <- false
+		select {
+		case <-done:
+			return
+		default: {
+			if err != nil { // email not found
+				sameEmailChannel <- true
+			} else {
+				sameEmailChannel <- false
+			}
+		}
 		}
 	}(data.Email)
 
 	go func(username string) {
 		_, err := model.GetUserByUsername(username)
-		if err != nil { // user not found
-			sameUsernameChannel <- true
-		} else {
-			sameUsernameChannel <- false
+		select {
+		case <-done:
+			return
+		default: {
+			if err != nil { // user not found
+				sameUsernameChannel <- true
+			} else {
+				sameUsernameChannel <- false
+			}
+		}
 		}
 	}(data.Username)
 
-	if !<-sameEmailChannel || !<-sameUsernameChannel {
+	userExisted := false
+
+	for round:=0; !userExisted && round < 2; round++ {
+		select {
+		case emailResult := <- sameEmailChannel: {
+			if !emailResult {
+				userExisted = true
+				break
+			}
+		}
+		case usernameResult := <- sameUsernameChannel: {
+			if !usernameResult {
+				userExisted = true
+				break
+			}
+		}
+		}
+	}
+
+	if userExisted {
+		close(done)
 		handler.SendResponse(c, errno.ErrUserExisted, nil)
-		close(sameUsernameChannel)
-		close(sameEmailChannel)
 		return
+	} else {
+		defer close(done)
 	}
 
 	password, err := model.UserPasswordDecoder(data.Password)

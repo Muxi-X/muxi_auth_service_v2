@@ -22,6 +22,7 @@ func Test_B_SignUp(t *testing.T) {
 	}
 	w := util.SendTestRequest("POST", "/auth/api/signup", signupMock)
 	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, 0, util.GetCodeFromError(t, w.Body.Bytes()))
 }
 
 func Test_C_SignIn(t *testing.T) {
