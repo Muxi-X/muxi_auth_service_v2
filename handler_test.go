@@ -15,13 +15,13 @@ import (
 )
 
 func Test_B_SignUp(t *testing.T) {
-    signupMock := signup.UserSignupRequestData {
+	signupMock := signup.UserSignupRequestData{
 		Username: "testMockUser2",
-		Email: "testUser2@mock.com",
+		Email:    "testUser2@mock.com",
 		Password: base64.StdEncoding.EncodeToString([]byte("testMockPassword2")),
 	}
 	w := util.SendTestRequest("POST", "/auth/api/signup", signupMock)
-    assert.Equal(t, 200, w.Code)
+	assert.Equal(t, 200, w.Code)
 }
 
 func Test_C_SignIn(t *testing.T) {

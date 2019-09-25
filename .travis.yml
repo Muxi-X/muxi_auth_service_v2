@@ -3,7 +3,6 @@ sudo: required
 dist: trusty
 
 go:
-  - 1.10.x
   - 1.11.x
 
 before_script:
