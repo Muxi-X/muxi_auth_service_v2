@@ -11,8 +11,6 @@ import (
 	"testing"
 )
 
-
-
 func TestMain(m *testing.M) {
 	pflag.Parse()
 
