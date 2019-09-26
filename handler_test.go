@@ -46,7 +46,11 @@ func Test_D_A_CheckEmail(t *testing.T) {
 
 	constvar.TestRouter.ServeHTTP(w, req)
 
-	assert.Equal(t, 500, w.Code)
+	assert.Equal(t, 200, w.Code)
+
+	var data handler.Response
+	result := util.GetValueFromResponse(t, w.Body.Bytes(), data, "").(bool)
+	assert.Equal(t, true, result)
 }
 
 func Test_D_B_CheckEmail(t *testing.T) {
@@ -59,6 +63,10 @@ func Test_D_B_CheckEmail(t *testing.T) {
 	constvar.TestRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
+
+	var data handler.Response
+	result := util.GetValueFromResponse(t, w.Body.Bytes(), data, "").(bool)
+	assert.Equal(t, false, result)
 }
 
 func Test_E_A_CheckUsername(t *testing.T) {
@@ -85,6 +93,10 @@ func Test_E_B_CheckUsername(t *testing.T) {
 	constvar.TestRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
+
+	var data handler.Response
+	result := util.GetValueFromResponse(t, w.Body.Bytes(), data, "").(bool)
+	assert.Equal(t, false, result)
 }
 
 func Test_F_CheckToken(t *testing.T) {

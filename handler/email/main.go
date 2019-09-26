@@ -7,6 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Response struct {
+	Email string `json:"email"`
+}
+
 // 根据用户名获取邮箱
 func GetEmailByUsername(c *gin.Context) {
 	if username, ok := c.GetQuery("username"); !ok {
@@ -18,9 +22,9 @@ func GetEmailByUsername(c *gin.Context) {
 			handler.SendResponse(c, errno.ErrUserNotFound, nil)
 			return
 		} else {
-			handler.SendResponse(c, nil, struct {
-				Email string `json:"email"`
-			}{email})
+			handler.SendResponse(c, nil, Response{
+				Email: email,
+			})
 		}
 	}
 	return

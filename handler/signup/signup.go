@@ -49,14 +49,14 @@ func UserSignup(c *gin.Context) {
 		select {
 		case <-done:
 			return
-		default: {
-			// 没有结束，将结果输入信道
-			if err != nil { // email not found
-				sameEmailChannel <- true
-			} else {
-				sameEmailChannel <- false
+		default:
+			{
+				if err != nil { // email not found
+					sameEmailChannel <- true
+				} else {
+					sameEmailChannel <- false
+				}
 			}
-		}
 		}
 	}(data.Email)
 
@@ -67,37 +67,36 @@ func UserSignup(c *gin.Context) {
 		select {
 		case <-done:
 			return
-		default: {
-			// 没有结束，将结果输入信道
-			if err != nil { // user not found
-				sameUsernameChannel <- true
-			} else {
-				sameUsernameChannel <- false
+		default:
+			{
+				if err != nil { // user not found
+					sameUsernameChannel <- true
+				} else {
+					sameUsernameChannel <- false
+				}
 			}
-		}
 		}
 	}(data.Username)
 
 	// 用于标识用户名和邮箱重复检查的状态，false为没有重复
 	userExisted := false
 
-	// 最多循环两次
-	for round:=0; !userExisted && round < 2; round++ {
+	for round := 0; !userExisted && round < 2; round++ {
 		select {
-		case emailResult := <- sameEmailChannel: {
-			if !emailResult {
-				userExisted = true
-				// 不再等待另一个信道
-				break
+		case emailResult := <-sameEmailChannel:
+			{
+				if !emailResult {
+					userExisted = true
+					break
+				}
 			}
-		}
-		case usernameResult := <- sameUsernameChannel: {
-			if !usernameResult {
-				userExisted = true
-				// 不再等待另一个信道
-				break
+		case usernameResult := <-sameUsernameChannel:
+			{
+				if !usernameResult {
+					userExisted = true
+					break
+				}
 			}
-		}
 		}
 	}
 
