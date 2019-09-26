@@ -1,12 +1,11 @@
 package signup
 
 import (
-	"strings"
-
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
 	"github.com/Muxi-X/muxi_auth_service_v2/model"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
 	"github.com/Muxi-X/muxi_auth_service_v2/service"
+	"github.com/Muxi-X/muxi_auth_service_v2/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,7 +30,7 @@ func UserSignup(c *gin.Context) {
 		return
 	}
 	// 校验输入邮箱格式
-	if !strings.Contains(data.Email, "@") || !strings.HasSuffix(data.Email, ".com") {
+	if !util.CheckEmailAddress(data.Email) {
 		handler.SendBadRequest(c, errno.ErrUserSignupEmailInvalid, nil, "Email invalid.")
 		return
 	}

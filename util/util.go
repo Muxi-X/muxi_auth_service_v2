@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 )
 
@@ -53,4 +54,11 @@ func GetCodeFromError(t *testing.T, bytes []byte) int {
 	assert.Equal(t, err, nil)
 
 	return responseErr.Code
+}
+
+func CheckEmailAddress(email string) (b bool) {
+	if m, _ := regexp.MatchString("^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+", email); !m {
+		return false
+	}
+	return true
 }
