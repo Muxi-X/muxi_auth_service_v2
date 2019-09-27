@@ -1,13 +1,14 @@
 package router
 
 import (
+	"net/http"
+
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/check"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/email"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/password"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signin"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signup"
-	"github.com/gin-contrib/cors"
-	"net/http"
+	"github.com/Muxi-X/muxi_auth_service_v2/router/middleware"
 
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/sd"
 	"github.com/gin-gonic/gin"
@@ -16,10 +17,11 @@ import (
 // Load loads the middlewares, routes, handlers.
 func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 	// Middlewares.
-	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
+	g.Use(gin.Recovery())
+	g.Use(middleware.NoCache)
+	g.Use(middleware.Options)
+	g.Use(middleware.Secure)
 
-	g.Use(gin.Recovery(), cors.New(config))
 	g.Use(mw...)
 	// 404 Handler.
 	g.NoRoute(func(c *gin.Context) {
