@@ -25,7 +25,7 @@ func Test_B_SignUp(t *testing.T) {
 	assert.Equal(t, 0, util.GetCodeFromError(t, w.Body.Bytes()))
 }
 
-func Test_C_SignIn(t *testing.T) {
+func Test_C_A_SignIn(t *testing.T) {
 	signinMock := signin.UserSigninRequestData{
 		Username: "testMockUser2",
 		Password: base64.StdEncoding.EncodeToString([]byte("testMockPassword2")),
@@ -35,6 +35,24 @@ func Test_C_SignIn(t *testing.T) {
 
 	var data handler.Response
 	constvar.Token = util.GetValueFromResponse(t, w.Body.Bytes(), data, "token").(string)
+}
+
+func Test_C_B_Signin(t *testing.T) {
+	signinMock := signin.UserSigninRequestData{
+		Username: "testMockUser2",
+		Password: base64.StdEncoding.EncodeToString([]byte("testMoooooockPassword2")),
+	}
+	w := util.SendTestRequest("POST", "/auth/api/signin", signinMock)
+	assert.Equal(t, 20301, util.GetCodeFromError(t, w.Body.Bytes()))
+}
+
+func Test_C_C_Signin(t *testing.T) {
+	signinMock := signin.UserSigninRequestData{
+		Username: "testMo00000ckUser2",
+		Password: base64.StdEncoding.EncodeToString([]byte("testMoooooockPassword2")),
+	}
+	w := util.SendTestRequest("POST", "/auth/api/signin", signinMock)
+	assert.Equal(t, 20102, util.GetCodeFromError(t, w.Body.Bytes()))
 }
 
 func Test_D_A_CheckEmail(t *testing.T) {

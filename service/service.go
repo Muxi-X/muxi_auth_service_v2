@@ -111,9 +111,14 @@ func CheckUserNotExisted(username string) *model.UserModel {
 		}
 	}(username)
 
+	tot := 0
 	for user = range checkChannel {
 		if user != nil {
 			break
+		}
+		tot += 1
+		if tot == 2 {
+		    return nil
 		}
 	}
 
