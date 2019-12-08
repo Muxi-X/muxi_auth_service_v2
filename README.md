@@ -8,7 +8,7 @@
 
 主要依赖：gin + gorm + viper + lexkong/log
 
-支持Go语言版本： Golang 1.10 及以上
+支持Go语言版本： Golang 1.12 及以上
 
 ### 构建和运行 Build and run
 
@@ -24,4 +24,4 @@ make test
 
 ### 包管理
 
-暂时使用Vendor Tree
+go mod

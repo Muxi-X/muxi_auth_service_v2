@@ -118,7 +118,7 @@ func CheckUserNotExisted(username string) *model.UserModel {
 		}
 		tot += 1
 		if tot == 2 {
-		    return nil
+			return nil
 		}
 	}
 
