@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/Muxi-X/muxi_auth_service_v2/config"
 	"github.com/Muxi-X/muxi_auth_service_v2/model"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
@@ -15,6 +16,7 @@ func TestMain(m *testing.M) {
 	pflag.Parse()
 
 	if err := config.Init(*cfg); err != nil {
+		fmt.Println(*cfg)
 		panic(err)
 	}
 
