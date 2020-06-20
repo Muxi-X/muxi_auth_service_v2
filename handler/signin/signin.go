@@ -6,6 +6,7 @@ import (
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/auth"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
 	"github.com/Muxi-X/muxi_auth_service_v2/service"
+
 	"github.com/gin-gonic/gin"
 )
 

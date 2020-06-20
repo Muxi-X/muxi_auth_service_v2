@@ -1,18 +1,20 @@
 package util
 
 import (
-	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
-	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
-	"github.com/teris-io/shortid"
-
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"testing"
+
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
+
+	"github.com/gin-gonic/gin"
+	uuid "github.com/satori/go.uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/teris-io/shortid"
 )
 
 func GenShortId() (string, error) {
@@ -61,4 +63,9 @@ func CheckEmailAddress(email string) (b bool) {
 		return false
 	}
 	return true
+}
+
+func GenerateUUID() string {
+	u := uuid.NewV4()
+	return u.String()
 }

@@ -35,4 +35,9 @@ var (
 	// orm error
 	ErrUserCreate = &Errno{Code: 30001, Message: "The (*UserModel)Create() method error."}
 	ErrUserUpdate = &Errno{Code: 30002, Message: "The (*UserModel)Update() method error."}
+
+	// oauth error
+	ErrGenerateAuthCode    = &Errno{Code: 40001, Message: "Error occurred while generating auth code."}
+	ErrGenerateAccessToken = &Errno{Code: 40002, Message: "Error occurred while generating access token."}
+	ErrRefreshToken        = &Errno{Code: 40003, Message: "Error occurred while refreshing token."}
 )
