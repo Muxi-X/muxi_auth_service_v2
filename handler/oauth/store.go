@@ -1,19 +1,17 @@
 package oauth
 
 import (
-	"fmt"
-
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
 	. "github.com/Muxi-X/muxi_auth_service_v2/pkg/oauth"
-	"github.com/Muxi-X/muxi_auth_service_v2/util"
+	"github.com/Muxi-X/muxi_auth_service_v2/service"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/oauth2.v4/models"
 )
 
 type StoreRequest struct {
-	ClientId string `json:"client_id"`
-	Domain   string `json:"domain"`
+	Domain string `json:"domain"`
 }
 
 type StoreResponse struct {
@@ -24,27 +22,32 @@ type StoreResponse struct {
 func Store(c *gin.Context) {
 	var rq StoreRequest
 	if err := c.BindJSON(&rq); err != nil {
-		handler.SendBadRequest(c, err, nil, err.Error())
-		return
-	}
-	fmt.Println(rq)
-
-	if _, err := OauthServer.ClientStore.GetByID(c, rq.ClientId); err != nil {
-		// 找到，已存在
-		handler.SendBadRequest(c, err, nil, err.Error())
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, err.Error())
 		return
 	}
 
-	secret := util.GenerateUUID()
-	OauthServer.ClientStore.Set(rq.ClientId, &models.Client{
-		ID:     rq.ClientId,
+	// 域名是否有效
+	if ok := service.CheckDomain(rq.Domain); !ok {
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "Domain is invalid.")
+		return
+	}
+
+	// 域名是否已存在
+	if _, err := OauthServer.ClientStore.GetByDomain(rq.Domain); err != nil {
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, err.Error())
+		return
+	}
+
+	clientID, secret := service.GenerateClientIDAndSecret()
+
+	OauthServer.ClientStore.Create(&models.Client{
+		ID:     clientID,
 		Secret: secret,
 		Domain: rq.Domain,
-		UserID: "",
 	})
 
 	handler.SendResponse(c, nil, StoreResponse{
-		ClientId:     rq.ClientId,
+		ClientId:     clientID,
 		ClientSecret: secret,
 	})
 }

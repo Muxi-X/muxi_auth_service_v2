@@ -11,6 +11,7 @@ import (
 	"gopkg.in/oauth2.v4"
 )
 
+// 更新 access token
 // Params:
 //   grant_type: refresh_token
 //   client_id:

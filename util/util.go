@@ -66,6 +66,5 @@ func CheckEmailAddress(email string) (b bool) {
 }
 
 func GenerateUUID() string {
-	u := uuid.NewV4()
-	return u.String()
+	return uuid.NewV4().String()
 }

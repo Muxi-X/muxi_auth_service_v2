@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signin"
@@ -13,12 +14,17 @@ import (
 	"github.com/lexkong/log"
 )
 
+type AuthCodeResponse struct {
+	ClientID string `json:"client_id"`
+	Code     string `json:"code"`
+	Expired  int64  `json:"expired"`
+}
+
 // 授权&授权码
 // Params:
 //   response_type: code
 //   client_id:
 //   redirect_uri:
-//   token_exp(可选):
 // Json:
 //   username:
 //   password:
@@ -32,7 +38,6 @@ func Auth(c *gin.Context) {
 	}
 	// 并发检查user是否存在
 	user := service.CheckUserNotExisted(data.Username)
-
 	if user == nil {
 		handler.SendResponse(c, errno.ErrUserNotFound, nil)
 		return
@@ -71,6 +76,10 @@ func Auth(c *gin.Context) {
 		// redirect
 	}
 
-	handler.SendResponse(c, nil, tokenInfo)
+	handler.SendResponse(c, nil, AuthCodeResponse{
+		ClientID: tokenInfo.GetClientID(),
+		Code:     tokenInfo.GetCode(),
+		Expired:  int64(tokenInfo.GetCodeExpiresIn() / time.Second),
+	})
 	// redirect
 }

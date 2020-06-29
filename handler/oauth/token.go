@@ -76,7 +76,6 @@ func Token(c *gin.Context) {
 		RefreshToken:   tokenInfo.GetRefresh(),
 		RefreshExpired: int64(tokenInfo.GetRefreshExpiresIn() / time.Second),
 	})
-	// log.Info("request token finished")
 }
 
 /*
