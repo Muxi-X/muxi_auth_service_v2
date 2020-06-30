@@ -1,7 +1,6 @@
 package oauth
 
 import (
-	"errors"
 	"time"
 
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
@@ -25,33 +24,25 @@ type AccessTokenResponse struct {
 //   grant_type: authorization_code
 //   response_type: token
 //   client_id:
-//   redirect_uri:
 // Forms:
 //   client_secret:
 //   code:
 func Token(c *gin.Context) {
-
 	grantType, ok := c.GetQuery("grant_type")
-	if !ok {
-		err := errors.New("grant_type is required")
-		handler.SendBadRequest(c, err, nil, err.Error())
-		return
-	} else if grantType != "authorization_code" {
-		err := errors.New("auth code grant")
-		handler.SendBadRequest(c, err, nil, err.Error())
+	if !ok || grantType != "authorization_code" {
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "grant_type is required and must be authorization_code")
 		return
 	}
 
 	code, ok := c.GetPostForm("code")
 	if !ok {
-		err := errors.New("code")
-		handler.SendBadRequest(c, err, nil, err.Error())
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "code is required")
 		return
 	}
 
 	clientID, clientSecret, err := OauthServer.Server.ClientInfoHandler(c.Request)
 	if err != nil {
-		handler.SendBadRequest(c, err, nil, err.Error())
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "client_id and client_secret are required")
 		return
 	}
 
@@ -77,21 +68,3 @@ func Token(c *gin.Context) {
 		RefreshExpired: int64(tokenInfo.GetRefreshExpiresIn() / time.Second),
 	})
 }
-
-/*
-tokenInfo:
-
-		"ClientID": "test",
-        "UserID": "123",
-        "RedirectURI": "",
-        "Scope": "",
-        "Code": "",
-        "CodeCreateAt": "0001-01-01T00:00:00Z",
-        "CodeExpiresIn": 0,
-        "Access": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ0ZXN0IiwiZXhwIjoxNTkyNjUzMzI0LCJzdWIiOiIxMjMifQ.QAYq3BgTIgBHkDYqdYkn5RA3sNZJ_03AzkNbE_uYtJiuwlwEiEF1xnpUZZbpR9lrzvrE2YMKxPDT9wWyEyrmyQ",
-        "AccessCreateAt": "2020-06-19T19:42:04.261935483+08:00",
-        "AccessExpiresIn": 86400000000000,
-        "Refresh": "EJ0QVMY_VIO0FQYKE4SJNG",
-        "RefreshCreateAt": "2020-06-19T19:42:04.261935483+08:00",
-        "RefreshExpiresIn": 172800000000000
-*/

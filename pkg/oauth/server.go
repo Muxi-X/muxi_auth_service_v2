@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	authCodeExp     = time.Hour * 3
-	accessTokenExp  = time.Hour * 24
-	refreshTokenExp = time.Hour * 48
+	authCodeExp     = time.Minute * 30
+	accessTokenExp  = time.Hour * 24 * 10
+	refreshTokenExp = time.Hour * 24 * 30
 
 	tokenStoreTableName  = "oauth2_token"
 	clientStoreTableName = "oauth2_client"
@@ -108,7 +108,7 @@ func getTokenStore() oauth2.TokenStore {
 	return store.NewTokenStore(&store.TokenConfig{
 		BasicConfig: getDBBasicConfig(tokenStoreTableName),
 		GcDisabled:  false,
-		GcInterval:  time.Minute * 30,
+		GcInterval:  time.Hour * 2,
 	})
 }
 
@@ -116,14 +116,6 @@ func getClientStore() *store.ClientStore {
 	return store.NewClientStore(&store.ClientConfig{
 		BasicConfig: getDBBasicConfig(clientStoreTableName),
 	})
-
-	// clientStore.Create(&models.Client{
-	// 	ID:     "test",
-	// 	Secret: "2",
-	// 	Domain: "http://localhost:9094",
-	// })
-
-	// return clientStore
 }
 
 func getDBBasicConfig(table string) store.BasicConfig {

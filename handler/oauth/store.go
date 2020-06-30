@@ -19,6 +19,7 @@ type StoreResponse struct {
 	ClientSecret string `json:"client_secret"`
 }
 
+// 注册客户端
 func Store(c *gin.Context) {
 	var rq StoreRequest
 	if err := c.BindJSON(&rq); err != nil {

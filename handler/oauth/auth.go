@@ -15,16 +15,15 @@ import (
 )
 
 type AuthCodeResponse struct {
-	ClientID string `json:"client_id"`
-	Code     string `json:"code"`
-	Expired  int64  `json:"expired"`
+	Code    string `json:"code"`
+	Expired int64  `json:"expired"`
 }
 
 // 授权&授权码
 // Params:
 //   response_type: code
 //   client_id:
-//   redirect_uri:
+//   token_exp: token过期时间，可选
 // Json:
 //   username:
 //   password:
@@ -48,38 +47,34 @@ func Auth(c *gin.Context) {
 		return
 	}
 
-	// userID := user.Id
-
 	// 获取授权码
 
+	// 检验请求参数
 	req, err := OauthServer.Server.ValidationAuthorizeRequest(c.Request)
 	if err != nil {
-
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, err.Error())
 		return
 	}
 
 	req.UserID = strconv.Itoa(int(user.Id))
 
-	// 可设置token过期时间，纳秒
-	// if tokenExp, ok := c.GetQuery("token_exp"); ok {
-	// 	exp, err := strconv.ParseInt(tokenExp, 10, 64)
-	// 	if err == nil {
-	// 		req.AccessTokenExp = time.Duration(exp)
-	// 	}
-	// }
+	// 可设置token过期时间（秒）
+	if tokenExp, ok := c.GetQuery("token_exp"); ok {
+		exp, err := strconv.ParseInt(tokenExp, 10, 64)
+		if err == nil {
+			req.AccessTokenExp = time.Duration(time.Duration(exp) * time.Second)
+		}
+	}
 
 	tokenInfo, err := OauthServer.Server.GetAuthorizeToken(c, req)
 	if err != nil {
 		log.Error("generate auth code error", err)
 		handler.SendError(c, errno.ErrGenerateAuthCode, nil, err.Error())
 		return
-		// redirect
 	}
 
 	handler.SendResponse(c, nil, AuthCodeResponse{
-		ClientID: tokenInfo.GetClientID(),
-		Code:     tokenInfo.GetCode(),
-		Expired:  int64(tokenInfo.GetCodeExpiresIn() / time.Second),
+		Code:    tokenInfo.GetCode(),
+		Expired: int64(tokenInfo.GetCodeExpiresIn() / time.Second),
 	})
-	// redirect
 }
