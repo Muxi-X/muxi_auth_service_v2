@@ -20,11 +20,8 @@ import (
 //   refresh_token:
 func Refresh(c *gin.Context) {
 	grantType, ok := c.GetQuery("grant_type")
-	if !ok {
-		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "grant_type is required")
-		return
-	} else if grantType != "refresh_token" {
-		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "refresh_token")
+	if !ok || grantType != "refresh_token" {
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "grant_type is required and must be refresh_token")
 		return
 	}
 
