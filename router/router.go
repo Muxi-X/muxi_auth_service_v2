@@ -7,11 +7,12 @@ import (
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/email"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/oauth"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/password"
+	"github.com/Muxi-X/muxi_auth_service_v2/handler/sd"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signin"
 	"github.com/Muxi-X/muxi_auth_service_v2/handler/signup"
+	"github.com/Muxi-X/muxi_auth_service_v2/handler/user"
 	"github.com/Muxi-X/muxi_auth_service_v2/router/middleware"
 
-	"github.com/Muxi-X/muxi_auth_service_v2/handler/sd"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,8 +30,6 @@ func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 		c.String(http.StatusNotFound, "The incorrect API route.")
 	})
 
-	// loginRequired := middleware.LoginRequiredMiddleware()
-
 	authRouter := g.Group("/auth/api")
 	{
 		authRouter.POST("/signup", signup.UserSignup)
@@ -47,6 +46,12 @@ func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 		authRouter.POST("/oauth/token", oauth.Token)
 		authRouter.POST("/oauth/token/refresh", oauth.Refresh)
 		authRouter.POST("/oauth/store", oauth.Store)
+	}
+
+	userRouter := g.Group("/auth/api/user")
+	userRouter.Use(middleware.LoginRequiredMiddleware())
+	{
+		userRouter.GET("", user.Get)
 	}
 
 	// The health check handlers

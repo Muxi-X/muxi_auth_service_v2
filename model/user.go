@@ -109,3 +109,9 @@ func (user *UserModel) VerifyCaptcha(newCap string) bool {
 	fmt.Println(oldCap, newCap)
 	return oldCap == newCap
 }
+
+func GetUserInfoByID(id uint64) (*UserInfo, error) {
+	info := &UserInfo{}
+	d := DB.Self.Table("users").Where("id = ?", id).First(&info)
+	return info, d.Error
+}

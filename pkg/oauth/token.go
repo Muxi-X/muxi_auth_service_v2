@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
 func ResolveAccessToken(accessToken string) (string, error) {
@@ -13,7 +14,7 @@ func ResolveAccessToken(accessToken string) (string, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte("oauth"), nil
+		return []byte(jwtKey), nil
 	})
 
 	if err != nil {
@@ -21,11 +22,11 @@ func ResolveAccessToken(accessToken string) (string, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		if sub, ok := claims["sub"]; !ok {
+		sub, ok := claims["sub"]
+		if !ok {
 			return "", errors.New("Token not include `cap` field.")
-		} else {
-			return sub.(string), nil
 		}
+		return sub.(string), nil
 	}
 	return "", errors.New("Unknown error.")
 }
@@ -36,4 +37,12 @@ func GetUserIDFromToken(token string) (uint64, error) {
 		return 0, err
 	}
 	return strconv.ParseUint(userID, 10, 64)
+}
+
+func ParseRequest(c *gin.Context) (uint64, error) {
+	token := c.GetHeader("token")
+	if token == "" {
+		return 0, errors.New("token is required")
+	}
+	return GetUserIDFromToken(token)
 }

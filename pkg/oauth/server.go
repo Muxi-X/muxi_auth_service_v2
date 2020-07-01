@@ -17,8 +17,8 @@ import (
 
 const (
 	authCodeExp     = time.Minute * 30
-	accessTokenExp  = time.Hour * 24 * 10
-	refreshTokenExp = time.Hour * 24 * 30
+	accessTokenExp  = time.Hour * 24 * 30
+	refreshTokenExp = time.Hour * 24 * 365 * 5
 
 	tokenStoreTableName  = "oauth2_token"
 	clientStoreTableName = "oauth2_client"
@@ -29,7 +29,10 @@ type OauthServerModel struct {
 	ClientStore *store.ClientStore
 }
 
-var OauthServer *OauthServerModel
+var (
+	OauthServer *OauthServerModel
+	jwtKey      string
+)
 
 func (*OauthServerModel) Init() {
 	clientStore := getClientStore()
@@ -94,7 +97,7 @@ func getManager() *manage.Manager {
 	// token store
 	manager.MapTokenStorage(getTokenStore())
 	// token generate
-	jwtKey := viper.GetString("jwt_secret")
+	jwtKey = viper.GetString("jwt_secret")
 	manager.MapAccessGenerate(generates.NewJWTAccessGenerate([]byte(jwtKey), jwt.SigningMethodHS512))
 
 	// client store
