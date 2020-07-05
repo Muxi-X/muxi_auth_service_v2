@@ -14,11 +14,14 @@ basePath: "/auth/api"
 tags:
   - name: "auth"
     description: "auth API"
+  - name: "oauth"
+    description: "oauth2 API"
   - name: "profile"
     description: "profile API"
 schemes:
   - "https"
   - "http"
+
 paths:
   /signup:
     post:
@@ -54,6 +57,7 @@ paths:
           description: "Email duplicated"
         403:
           description: "Bad Request"
+
   /signin:
     post:
       tags:
@@ -89,6 +93,7 @@ paths:
           description: "Password incorrect."
         401:
           description: "User not found or Bad Request."
+
   /check_name:
     get:
       tags:
@@ -109,6 +114,7 @@ paths:
           description: "Username nobody using."
         400:
           description: "Username someone using it."
+
   /check_email:
     get:
       tags:
@@ -129,6 +135,7 @@ paths:
           description: "Email nobody using."
         400:
           description: "Email someone using it."
+
   /check_token:
     get:
       tags:
@@ -158,6 +165,7 @@ paths:
           description: "User not found"
         500:
           description: "Internal error."
+
   /email:
     get:
       tags:
@@ -185,6 +193,7 @@ paths:
                 format: "email"
         404:
           description: "User not found."
+
   /password/get_captcha:
     post:
       tags:
@@ -206,6 +215,7 @@ paths:
       responses:
         200:
           description: "Captcha be sent."
+
   /password/check_captcha:
     post:
       tags:
@@ -231,6 +241,7 @@ paths:
           description: "Bad Request"
         404:
           description: "User not found."
+
   /password/reset:
     post:
       tags:
@@ -256,6 +267,159 @@ paths:
           description: "Bad Request"
         404:
           description: "User not found."
+  /oauth:
+    post:
+      tags:
+        - "oauth"
+      summary: "login and get oauth code"
+      parameters:
+        - in: query
+          name: response_type
+          description: must be code
+          required: true
+          type: string
+        - in: query
+          name: client_id
+          required: true
+          type: string
+        - in: query
+          name: token_exp
+          required: false
+          type: string
+        - in: body
+          name: data
+          schema:
+            required:
+              - username
+              - password
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+      responses:
+        200:
+          description: ok
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+              expired:
+                type: integer
+
+  /oauth/token:
+    post:
+      tags:
+        - "oauth"
+      summary: "get access token"
+      consumes:
+        - "multipart/form-data"
+      produces:
+        - "application/json"
+      parameters:
+        - in: query
+          name: response_type
+          description: must be token
+          required: true
+          type: string
+        - in: query
+          name: grant_type
+          description: must be authorization_code
+          required: true
+          type: string
+        - in: query
+          name: client_id
+          required: true
+          type: string
+        - in: formData
+          name: client_secret
+          required: true
+          type: string
+        - in: formData
+          name: code
+          required: true
+          type: string
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: "#/definitions/AccessToken"
+
+  /oauth/token/refresh:
+    post:
+      tags:
+        - "oauth"
+      summary: "refresh access token"
+      consumes:
+        - "multipart/form-data"
+      produces:
+        - "application/json"
+      parameters:
+        - in: query
+          name: grant_type
+          description: must be refresh_token
+          required: true
+          type: string
+        - in: query
+          name: client_id
+          required: true
+          type: string
+        - in: formData
+          name: client_secret
+          required: true
+          type: string
+        - in: formData
+          name: refresh_token
+          required: true
+          type: string
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: "#/definitions/AccessToken"
+
+  /oauth/store:
+    post:
+      tags:
+        - "oauth"
+      summary: "register client with domain"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: body
+          name: data
+          schema:
+            required:
+              - domain
+            properties:
+              domain:
+                type: string
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: "#/definitions/ClientStore"
+
+  /user:
+    get:
+      tags:
+        - "profile"
+      summary: "get user info"
+      parameters:
+        - in: header
+          name: token
+          description: oauth2 access token
+          required: true
+          type: string
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/UserInfo"
+
 definitions:
   UserSignup:
     type: "object"
@@ -320,3 +484,56 @@ definitions:
         example: "muxistudio@qq.com"
       new_password:
         type: "string"
+  AccessToken:
+    type: "object"
+    properties:
+      access_token:
+        type: string
+      access_expired:
+        type: integer
+      refresh_token:
+        type: string
+      refresh_expired:
+        type: integer
+  ClientStore:
+    type: "object"
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+  UserInfo:
+    type: "object"
+    properties:
+      email:
+        type: string
+      birthday:
+        type: string
+      hometown:
+        type: string
+      group:
+        type: string
+      timejoin:
+        type: string
+      timeleft:
+        type: string
+      username:
+        type: string
+      role_id:
+        type: integer
+      left:
+        type: boolean
+      info:
+        type: string
+      avatar_url:
+        type: string
+      personal_blog:
+        type: string
+      github:
+        type: string
+      flickr:
+        type: string
+      weibo:
+        type: string
+      zhihu:
+        type: string

@@ -13,8 +13,8 @@ import (
 )
 
 type AccessTokenResponse struct {
-	AccessToken    string `json:"token"`
-	AccessExpired  int64  `json:"expired"` // 过期时间（s）
+	AccessToken    string `json:"access_token"`
+	AccessExpired  int64  `json:"access_expired"` // 过期时间（s）
 	RefreshToken   string `json:"refresh_token"`
 	RefreshExpired int64  `json:"refresh_expired"`
 }
