@@ -7,7 +7,9 @@ import (
 
 	"github.com/Muxi-X/muxi_auth_service_v2/config"
 	"github.com/Muxi-X/muxi_auth_service_v2/model"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/oauth"
 	"github.com/Muxi-X/muxi_auth_service_v2/router"
+
 	"github.com/gin-gonic/gin"
 	"github.com/lexkong/log"
 	"github.com/spf13/pflag"
@@ -30,6 +32,9 @@ func main() {
 	model.DB.Init()
 
 	defer model.DB.Close()
+
+	// init oauth-service
+	oauth.OauthServer.Init()
 
 	// Set gin mode.
 	gin.SetMode(viper.GetString("runmode"))

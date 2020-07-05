@@ -1,8 +1,6 @@
 package service
 
-import (
-	"github.com/Muxi-X/muxi_auth_service_v2/model"
-)
+import "github.com/Muxi-X/muxi_auth_service_v2/model"
 
 func CheckUserExisted(username, email string) bool {
 	// 声明用于检查邮箱、用户名是否重复的通信信道；用于标识检查流程是否结束的信道

@@ -18,7 +18,7 @@ type Database struct {
 var DB *Database
 
 func openDB(username, password, addr, name string) *gorm.DB {
-	fmt.Println("Start to connect:", username, password, addr, name)
+	// fmt.Println("Start to connect:", username, password, addr, name)
 	config := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=%t&loc=%s",
 		username,
 		password,
