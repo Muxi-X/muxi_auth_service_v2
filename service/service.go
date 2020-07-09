@@ -5,10 +5,10 @@ import "github.com/Muxi-X/muxi_auth_service_v2/model"
 func CheckUserExisted(username, email string) bool {
 	// 声明用于检查邮箱、用户名是否重复的通信信道；用于标识检查流程是否结束的信道
 	sameEmailChannel, sameUsernameChannel, done := make(chan bool), make(chan bool), make(chan struct{})
-	defer close(sameEmailChannel)
-	defer close(sameUsernameChannel)
 	// 自动关闭done信道，这样就可以以return来代替close()方法
 	defer close(done)
+	defer close(sameEmailChannel)
+	defer close(sameUsernameChannel)
 
 	// 并发检查邮箱
 	go func(email string) {
@@ -78,8 +78,8 @@ func CheckUserExisted(username, email string) bool {
 func CheckUserNotExisted(username string) *model.UserModel {
 	var user *model.UserModel
 	checkChannel, done := make(chan *model.UserModel, 2), make(chan struct{})
-	defer close(checkChannel)
 	defer close(done)
+	defer close(checkChannel)
 
 	go func(username string) {
 		checkUsernameUser, checkUsernameError := model.GetUserByUsername(username)
