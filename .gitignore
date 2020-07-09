@@ -6,3 +6,4 @@ log
 *.xml
 *.iml
 *.out
+.vscode/

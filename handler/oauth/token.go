@@ -1,8 +1,6 @@
 package oauth
 
 import (
-	"time"
-
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
 	. "github.com/Muxi-X/muxi_auth_service_v2/pkg/oauth"
@@ -10,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lexkong/log"
 	"gopkg.in/oauth2.v4"
+	e "gopkg.in/oauth2.v4/errors"
 )
 
 type AccessTokenResponse struct {
@@ -57,14 +56,18 @@ func Token(c *gin.Context) {
 	tokenInfo, err := OauthServer.Server.GetAccessToken(c, oauth2.GrantType(grantType), tgr)
 	if err != nil {
 		log.Error("GetAccessToken error", err)
-		handler.SendError(c, errno.ErrGenerateAccessToken, nil, err.Error())
+		errCase := err.Error()
+		if err == e.ErrInvalidGrant {
+			errCase = "The code is invalid or has expired"
+		}
+		handler.SendError(c, errno.ErrGenerateAccessToken, nil, errCase)
 		return
 	}
 
 	handler.SendResponse(c, nil, AccessTokenResponse{
 		AccessToken:    tokenInfo.GetAccess(),
-		AccessExpired:  int64(tokenInfo.GetAccessExpiresIn() / time.Second),
+		AccessExpired:  int64(tokenInfo.GetAccessExpiresIn().Seconds()),
 		RefreshToken:   tokenInfo.GetRefresh(),
-		RefreshExpired: int64(tokenInfo.GetRefreshExpiresIn() / time.Second),
+		RefreshExpired: int64(tokenInfo.GetRefreshExpiresIn().Seconds()),
 	})
 }

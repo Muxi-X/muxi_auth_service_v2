@@ -75,6 +75,6 @@ func Auth(c *gin.Context) {
 
 	handler.SendResponse(c, nil, AuthCodeResponse{
 		Code:    tokenInfo.GetCode(),
-		Expired: int64(tokenInfo.GetCodeExpiresIn() / time.Second),
+		Expired: int64(tokenInfo.GetCodeExpiresIn().Seconds()),
 	})
 }
