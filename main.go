@@ -40,7 +40,7 @@ func main() {
 	gin.SetMode(viper.GetString("runmode"))
 
 	// Create the Gin engine.
-	g := gin.New()
+	g := gin.Default()
 
 	// Routes.
 	router.Load(
