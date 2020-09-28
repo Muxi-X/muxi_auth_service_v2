@@ -26,7 +26,7 @@ type AuthCodeResponse struct {
 //   token_exp: token过期时间，可选
 // Json:
 //   username:
-//   password:
+//   password: base64 password
 func Auth(c *gin.Context) {
 	// 登录
 
@@ -41,6 +41,7 @@ func Auth(c *gin.Context) {
 		handler.SendResponse(c, errno.ErrUserNotFound, nil)
 		return
 	}
+
 	// 校验密码
 	if !user.CheckPassword(data.Password) {
 		handler.SendResponse(c, errno.ErrUserPasswordIncorrect, nil)

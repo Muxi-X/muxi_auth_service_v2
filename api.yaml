@@ -286,6 +286,7 @@ paths:
           name: token_exp
           required: false
           type: string
+          description: 过期时间（s）
         - in: body
           name: data
           schema:
@@ -297,6 +298,7 @@ paths:
                 type: string
               password:
                 type: string
+                description: base64
       responses:
         200:
           description: ok
