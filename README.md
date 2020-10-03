@@ -105,7 +105,7 @@ Frontend              Backend                 Auth server
 
 | Path | Method | Header |
 | ---  | ---    | ---    |
-| /auth/api/oauth/auth | POST | - |
+| /auth/api/oauth | POST | - |
 
 Query Param:
 ```
