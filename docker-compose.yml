@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  muxiauth-frontend:
+    image: muxiauth_fe:latest
+    container_name: muxiauth-frontend
+    ports:
+      - "22813:80"
+    restart: unless-stopped
+  muxiauth-backend:
+    user: "0:0"
+    image: auth_pass:latest
+    container_name: muxiauth-backend
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    volumes:
+      - ./conf/config.yaml:/data/conf/config.yaml # 映射本地配置文件
+      - ./logs:/app/log # 映射日志目录
+    ports:
+      - "18083:8083"
+    networks:
+      - muxi-network
+
+networks:
+  muxi-network:
+    driver: bridge

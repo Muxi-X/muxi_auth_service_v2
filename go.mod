@@ -11,7 +11,9 @@ require (
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/jinzhu/gorm v1.9.14
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/lexkong/log v0.0.0-20180607165131-972f9cd951fc
+	github.com/nacos-group/nacos-sdk-go v1.1.6 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/shirou/gopsutil v2.20.6+incompatible
 	github.com/spf13/pflag v1.0.5

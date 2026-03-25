@@ -1,8 +1,10 @@
 package config
 
 import (
+	"bytes"
 	"strings"
 
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/nacosx"
 	"github.com/fsnotify/fsnotify"
 	"github.com/lexkong/log"
 	"github.com/spf13/viper"
@@ -32,25 +34,35 @@ func Init(cfg string) error {
 }
 
 func (c *Config) initConfig() error {
-	if c.Name != "" {
-		viper.SetConfigFile(c.Name) // 如果指定了配置文件，则解析指定的配置文件
-	} else {
-		// absPath, _ := filepath.Abs()
-		viper.AddConfigPath("./conf") // 如果没有指定配置文件，则解析默认的配置文件
-		viper.SetConfigName("config")
+	content, err := nacosx.GetConfigFromNacos("NACOS_AUTH_PASS")
+	if err != nil {
+		// 降级处理，走本地config
+		if c.Name != "" {
+			viper.SetConfigFile(c.Name) // 如果指定了配置文件，则解析指定的配置文件
+		} else {
+			// absPath, _ := filepath.Abs()
+			viper.AddConfigPath("./conf") // 如果没有指定配置文件，则解析默认的配置文件
+			viper.SetConfigName("config")
+		}
+		viper.SetConfigType("yaml")     // 设置配置文件格式为YAML
+		viper.AutomaticEnv()            // 读取匹配的环境变量
+		viper.SetEnvPrefix("MUXI_AUTH") // 读取环境变量的前缀为APISERVER
+		replacer := strings.NewReplacer(".", "_")
+		viper.SetEnvKeyReplacer(replacer)
+		if err := viper.ReadInConfig(); err != nil { // viper解析配置文件
+			return err
+		}
+		return nil
 	}
-	viper.SetConfigType("yaml")     // 设置配置文件格式为YAML
-	viper.AutomaticEnv()            // 读取匹配的环境变量
-	viper.SetEnvPrefix("MUXI_AUTH") // 读取环境变量的前缀为APISERVER
-	replacer := strings.NewReplacer(".", "_")
-	viper.SetEnvKeyReplacer(replacer)
-	if err := viper.ReadInConfig(); err != nil { // viper解析配置文件
+
+	viper.SetConfigType("yaml")
+	err = viper.ReadConfig(bytes.NewBuffer([]byte(content)))
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
-
 func (c *Config) initLog() {
 	passLagerCfg := log.PassLagerCfg{
 		Writers:        viper.GetString("log.writers"),
