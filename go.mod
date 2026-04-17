@@ -21,5 +21,6 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/teris-io/shortid v0.0.0-20171029131806-771a37caa5cf
 	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
+	gopkg.in/cas.v2 v2.2.3 // indirect
 	gopkg.in/oauth2.v4 v4.0.0
 )

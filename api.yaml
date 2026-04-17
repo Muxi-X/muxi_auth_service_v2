@@ -405,6 +405,38 @@ paths:
           schema:
             $ref: "#/definitions/ClientStore"
 
+  /oauth/cas/callback:
+    get:
+      tags:
+        - "oauth"
+      summary: "handle CAS callback and redirect with oauth code"
+      parameters:
+        - in: query
+          name: ticket
+          required: true
+          type: string
+        - in: query
+          name: client_id
+          required: true
+          type: string
+        - in: query
+          name: callback_url
+          required: true
+          type: string
+        - in: query
+          name: token_exp
+          required: false
+          type: string
+      responses:
+        302:
+          description: redirect to callback_url with code query parameter
+        400:
+          description: missing required callback parameters
+        401:
+          description: invalid or expired CAS ticket
+        404:
+          description: CAS user has not been mapped to a local user
+
   /user:
     get:
       tags:
