@@ -207,3 +207,20 @@ Response Data:
     "client_secret": ""
 }
 ```
+
+#### CAS OAuth Callback
+
+This service now also supports a CAS-based authorization-code flow while keeping the original username/password OAuth flow.
+
+The client should construct the CAS login URL by itself and point the `service` parameter to:
+
+```text
+/auth/api/oauth/cas/callback?client_id=...&callback_url=...&token_exp=...
+```
+
+After CAS authentication succeeds, this auth service will:
+
+1. validate the CAS ticket
+2. use the CAS username as an independent OAuth subject
+3. generate an OAuth authorization code
+4. redirect to `callback_url?code=...`
