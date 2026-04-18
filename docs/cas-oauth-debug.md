@@ -30,22 +30,19 @@ sequenceDiagram
     participant CAS as 华中师大CAS
     participant Backend as 后端服务
 
-    User->>App: 访问需要登录的业务
-    App->>OAuth: 请求 client_id 和 client_secret
-    OAuth-->>App: 返回 client_id, client_secret
     App->>User: 拼接CAS登录URL并跳转
-
+    
     User->>CAS: 访问CAS登录页
     CAS->>User: 显示登录表单
     User->>CAS: 输入账号密码
     CAS->>CAS: 验证登录
-
+    
     CAS->>OAuth: 回调callback地址，携带ticket
     OAuth->>CAS: 通过ticket验证身份
     CAS-->>OAuth: 返回用户信息
     OAuth->>OAuth: 存储用户信息，签发code
     OAuth->>User: 重定向到callback_url，携带code
-
+    
     User->>App: 携带code回调到业务应用
     App->>Backend: 发送code到后端
     Backend->>OAuth: 用client_secret换取身份信息
@@ -55,8 +52,8 @@ sequenceDiagram
     App-->>User: 登录成功
 ```
 
-这个图里有两点需要特别注意：
-
+这个图里有三点需要特别注意：
+- 开始访问 CAS 系统的 URL 是通过client_id(每个服务在oauth服务这边注册得到的),callback_url(每个服务自己管理的)等参数拼接而成的,
 - CAS ticket 只在 OAuth 服务内部使用一次，业务应用和业务后端都不直接消费 CAS ticket。
 - 业务系统最终感知到的仍然是 OAuth 授权码和它自己签发的业务 token，而不是 CAS 会话本身。
 
