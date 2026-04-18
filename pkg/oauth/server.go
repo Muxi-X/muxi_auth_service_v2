@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/logx"
 	store "github.com/Shadowmaple/oauth2-mysql-store"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/lexkong/log"
 	"github.com/spf13/viper"
 	"gopkg.in/oauth2.v4"
 	"gopkg.in/oauth2.v4/errors"
@@ -54,12 +54,19 @@ func serverConfig(srv *server.Server) {
 	srv.SetAllowGetAccessRequest(false)
 
 	srv.SetInternalErrorHandler(func(err error) (re *errors.Response) {
-		log.Infof("Internal Error: %s\n", err.Error())
+		// 统一记录 OAuth 服务内部错误，避免日志格式在升级后继续分裂。
+		logx.Infof("Internal Error: %s", err.Error())
 		return
 	})
 
 	srv.SetResponseErrorHandler(func(re *errors.Response) {
-		log.Infof("Response Error: %s\n", re.Error.Error())
+		if re == nil || re.Error == nil {
+			logx.Info("Response Error: empty oauth response error")
+			return
+		}
+
+		// 这里记录 OAuth 协议层面的响应错误，便于区分业务报错与框架报错。
+		logx.Infof("Response Error: %s", re.Error.Error())
 	})
 
 	// UserAuthorizationHandler get user id from request authorization
@@ -73,7 +80,8 @@ func serverConfig(srv *server.Server) {
 	srv.SetClientInfoHandler(func(r *http.Request) (clientID, clientSecret string, err error) {
 		clientID = r.FormValue("client_id")
 		clientSecret = r.FormValue("client_secret")
-		log.Info("client info: " + clientID + clientSecret)
+		// 这里不再打印 client_secret，避免敏感信息继续进入日志系统。
+		logx.Info("client info parsed", "client_id", clientID)
 		return
 	})
 

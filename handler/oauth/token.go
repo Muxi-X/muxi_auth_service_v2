@@ -3,10 +3,10 @@ package oauth
 import (
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/logx"
 	. "github.com/Muxi-X/muxi_auth_service_v2/pkg/oauth"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lexkong/log"
 	"gopkg.in/oauth2.v4"
 	e "gopkg.in/oauth2.v4/errors"
 )
@@ -20,12 +20,15 @@ type AccessTokenResponse struct {
 
 // 请求token
 // Params:
-//   grant_type: authorization_code
-//   response_type: token
-//   client_id:
+//
+//	grant_type: authorization_code
+//	response_type: token
+//	client_id:
+//
 // Forms:
-//   client_secret:
-//   code:
+//
+//	client_secret:
+//	code:
 func Token(c *gin.Context) {
 	grantType, ok := c.GetQuery("grant_type")
 	if !ok || grantType != "authorization_code" {
@@ -55,7 +58,8 @@ func Token(c *gin.Context) {
 
 	tokenInfo, err := OauthServer.Server.GetAccessToken(c, oauth2.GrantType(grantType), tgr)
 	if err != nil {
-		log.Error("GetAccessToken error", err)
+		// 这里保留授权码换取 access token 的底层错误，便于排查授权链路问题。
+		logx.Error("GetAccessToken error", "error", err)
 		errCase := err.Error()
 		if err == e.ErrInvalidGrant {
 			errCase = "The code is invalid or has expired"

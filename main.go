@@ -7,11 +7,11 @@ import (
 
 	"github.com/Muxi-X/muxi_auth_service_v2/config"
 	"github.com/Muxi-X/muxi_auth_service_v2/model"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/logx"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/oauth"
 	"github.com/Muxi-X/muxi_auth_service_v2/router"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lexkong/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -51,13 +51,15 @@ func main() {
 	// Ping the server to make sure the router is working.
 	go func() {
 		if err := pingServer(); err != nil {
-			log.Fatal("The router has no response, or it might took too long to start up.", err)
+			logx.Fatal("The router has no response, or it might took too long to start up.", "error", err)
 		}
-		log.Info("The router has been deployed successfully.")
+		logx.Info("The router has been deployed successfully.")
 	}()
 
-	log.Infof("Start to listening the incoming requests on http address: %s", viper.GetString("addr"))
-	log.Info(http.ListenAndServe(viper.GetString("addr"), g).Error())
+	logx.Infof("Start to listening the incoming requests on http address: %s", viper.GetString("addr"))
+	if err := http.ListenAndServe(viper.GetString("addr"), g); err != nil {
+		logx.Error("HTTP server stopped", "error", err)
+	}
 }
 
 // pingServer pings the http server to make sure the router is working.
@@ -70,7 +72,7 @@ func pingServer() error {
 		}
 
 		// Sleep for a second to continue the next ping.
-		log.Info("Waiting for the router, retry in 1 second.")
+		logx.Info("Waiting for the router, retry in 1 second.")
 		time.Sleep(time.Second)
 	}
 	return errors.New("Cannot connect to the router.")
