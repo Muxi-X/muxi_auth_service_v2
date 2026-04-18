@@ -410,32 +410,37 @@ paths:
       tags:
         - "oauth"
       summary: "handle CAS callback and redirect with oauth code"
+      description: "This endpoint is used as the CAS service callback. The client should first redirect the browser to CAS login with a service URL that points to this endpoint and includes client_id, callback_url and optional token_exp. After CAS login succeeds, this service validates the CAS ticket, converts the CAS username into an independent OAuth subject in the form of cas:<username>, generates an OAuth authorization code, and finally redirects to callback_url with the code query parameter."
       parameters:
         - in: query
           name: ticket
+          description: "CAS service ticket returned by CAS after successful login."
           required: true
           type: string
         - in: query
           name: client_id
+          description: "OAuth client id that should receive the authorization code."
           required: true
           type: string
         - in: query
           name: callback_url
+          description: "Business callback URL that will receive the generated OAuth authorization code."
           required: true
           type: string
         - in: query
           name: token_exp
           required: false
+          description: "Optional access token expiry in seconds, passed through to the existing OAuth issuing logic."
           type: string
       responses:
         302:
-          description: redirect to callback_url with code query parameter
+          description: "Redirect to callback_url with the generated code query parameter."
         400:
-          description: missing required callback parameters
+          description: "Missing required callback parameters such as ticket, client_id or callback_url."
         401:
-          description: invalid or expired CAS ticket
+          description: "Invalid, expired or already-consumed CAS ticket."
         404:
-          description: CAS user has not been mapped to a local user
+          description: "Reserved for historical compatibility. The current implementation no longer maps CAS users back to the local users table."
 
   /user:
     get:

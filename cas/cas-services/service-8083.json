@@ -1,0 +1,8 @@
+{
+  "@class": "org.apereo.cas.services.RegexRegisteredService",
+  "serviceId": "^http://localhost:8083/auth/api/oauth/cas/callback(?:\\?.*)?$",
+  "name": "go-server-callback",
+  "id": 10000001,
+  "description": "Allow CAS to redirect back to the Go callback endpoint.",
+  "evaluationOrder": 1
+}
