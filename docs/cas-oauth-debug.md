@@ -27,7 +27,7 @@ sequenceDiagram
     participant User as 用户
     participant App as 业务应用
     participant OAuth as OAuth服务
-    participant CAS as 华中师大CAS
+    participant CAS as CAS服务
     participant Backend as 后端服务
 
     App->>User: 拼接CAS登录URL并跳转
