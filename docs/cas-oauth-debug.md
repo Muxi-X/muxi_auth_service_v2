@@ -96,7 +96,7 @@ CAS 登录完成后，会回调到：
 
 ## 3. 关键配置
 
-当前与 CAS 相关的配置位于 [conf/config.yaml](..\conf\config.yaml)：
+当前与 CAS 相关的配置位于 [conf/config.yaml](../conf/config.yaml)：
 
 ```yaml
 cas:
@@ -130,7 +130,7 @@ cas:
 2. CAS 服务
    
    - 仓库内已经提供了本地 CAS 调试目录：
-     [cas/docker-compose.yaml](..\cas\docker-compose.yaml)
+     [cas/docker-compose.yaml](../cas/docker-compose.yaml)
 
 3. OAuth 服务自身
    
@@ -147,7 +147,7 @@ docker compose up -d
 ```
 
 当前已提供的 CAS 服务注册文件是：
-[cas/cas-services/service-8083.json](..\cas\cas-services\service-8083.json)
+[cas/cas-services/service-8083.json](../cas/cas-services/service-8083.json)
 
 它允许 CAS 回调到：
 
@@ -264,7 +264,7 @@ curl -X POST "http://localhost:8083/auth/api/oauth/token?grant_type=authorizatio
 
 优先检查：
 
-1. CAS 是否加载了 [service-8083.json](C:\Users\21017\Desktop\cas\muxi_auth_service_v2\cas\cas-services\service-8083.json)
+1. CAS 是否加载了 [service-8083.json](../cas/cas-services/service-8083.json)
 2. `service` 参数里的地址是否和 JSON 正则匹配
 3. `client_id`、`callback_url` 是否被错误地拼进了未转义的 URL
 
