@@ -23,7 +23,7 @@ func newDefaultLogger() *zap.SugaredLogger {
 		zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()),
 		zapcore.AddSync(os.Stdout),
 		zapcore.InfoLevel,
-	))
+	), zap.AddCaller(), zap.AddCallerSkip(1))
 	return baseLogger.Sugar()
 }
 
@@ -42,6 +42,7 @@ func InitFromViper() error {
 	baseLogger := zap.New(
 		zapcore.NewCore(encoder, syncer, level),
 		zap.AddCaller(),
+		zap.AddCallerSkip(1),
 	)
 
 	oldLogger := logger
