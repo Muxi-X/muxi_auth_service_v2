@@ -140,7 +140,7 @@ cas:
 
 ### 5.1 启动 CAS
 
-进入 [cas](..\cas) 目录后执行：
+进入 [cas](../cas) 目录后执行：
 
 ```powershell
 docker compose up -d
