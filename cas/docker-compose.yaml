@@ -1,0 +1,24 @@
+services:
+  cas:
+    image: apereo/cas:7.0.0
+    container_name: cas
+    ports:
+      - "8443:8443"
+      - "8080:8080"
+    volumes:
+      # 挂载本地服务注册目录，方便直接通过 JSON 文件管理允许访问的 service。
+      - ./cas-services:/etc/cas/services
+    environment:
+      - CAS_LOGGING_LEVEL=info
+      # 本地调试环境关闭 HTTPS 强依赖，避免被证书问题阻塞联调。
+      - SERVER_SSL_ENABLED=false
+      - CAS_SERVER_HTTP_ALLOW_HTTP=true
+      - CAS_TG_COOKIE_SECURE=false
+      # 关键配置：当前 registry 是 InMemoryServiceRegistry，需要显式允许它从 JSON 初始化。
+      - CAS_SERVICE_REGISTRY_CORE_INIT_FROM_JSON=true
+      # 开启管理端点，便于观察服务注册状态。
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=serviceregistry,health,info
+      - MANAGEMENT_ENDPOINT_SERVICEREGISTRY_ACCESS=ALLOW
+      # 指向 JSON 服务注册目录，并开启文件监听。
+      - CAS_SERVICE_REGISTRY_JSON_LOCATION=file:/etc/cas/services
+      - CAS_SERVICE_REGISTRY_JSON_WATCHER_ENABLED=true

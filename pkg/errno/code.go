@@ -41,4 +41,5 @@ var (
 	ErrGenerateAccessToken = &Errno{Code: 40002, Message: "Error occurred while generating access token."}
 	ErrRefreshToken        = &Errno{Code: 40003, Message: "Error occurred while refreshing token."}
 	ErrDomain              = &Errno{Code: 40004, Message: "The domain is invalid."}
+	ErrInvalidCASTicket    = &Errno{Code: 40005, Message: "The CAS ticket was invalid."}
 )

@@ -43,6 +43,7 @@ func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 		authRouter.POST("/password/reset", password.PasswordReset)
 
 		authRouter.POST("/oauth", oauth.Auth)
+		authRouter.GET("/oauth/cas/callback", oauth.CASCallback)
 		authRouter.POST("/oauth/token", oauth.Token)
 		authRouter.POST("/oauth/token/refresh", oauth.Refresh)
 		authRouter.POST("/oauth/store", oauth.Store)

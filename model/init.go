@@ -3,7 +3,7 @@ package model
 import (
 	"fmt"
 
-	"github.com/lexkong/log"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/logx"
 	"github.com/spf13/viper"
 
 	// MySQL driver.
@@ -30,7 +30,7 @@ func openDB(username, password, addr, name string) *gorm.DB {
 
 	db, err := gorm.Open("mysql", config)
 	if err != nil {
-		log.Errorf(err, "Database connection failed. Database name: %s", name)
+		logx.Error("Database connection failed", "database", name, "error", err)
 	}
 
 	// set for db connection

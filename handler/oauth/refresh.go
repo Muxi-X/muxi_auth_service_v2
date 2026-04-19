@@ -3,21 +3,24 @@ package oauth
 import (
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/logx"
 	. "github.com/Muxi-X/muxi_auth_service_v2/pkg/oauth"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lexkong/log"
 	"gopkg.in/oauth2.v4"
 	e "gopkg.in/oauth2.v4/errors"
 )
 
 // 更新 access token
 // Params:
-//   grant_type: refresh_token
-//   client_id:
+//
+//	grant_type: refresh_token
+//	client_id:
+//
 // Forms:
-//   client_secret:
-//   refresh_token:
+//
+//	client_secret:
+//	refresh_token:
 func Refresh(c *gin.Context) {
 	grantType, ok := c.GetQuery("grant_type")
 	if !ok || grantType != "refresh_token" {
@@ -46,7 +49,8 @@ func Refresh(c *gin.Context) {
 
 	tokenInfo, err := OauthServer.Server.GetAccessToken(c, oauth2.GrantType(grantType), tgr)
 	if err != nil {
-		log.Error("GetAccessToken error", err)
+		// 刷新 token 失败时记录结构化日志，便于区分是 refresh token 过期还是服务端内部错误。
+		logx.Error("GetAccessToken error", "error", err)
 		errCase := err.Error()
 		if err == e.ErrInvalidGrant {
 			errCase = "The refresh token is invalid or has expired"

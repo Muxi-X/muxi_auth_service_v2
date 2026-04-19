@@ -7,10 +7,10 @@ import (
 	"github.com/Muxi-X/muxi_auth_service_v2/model"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/logx"
 	"github.com/Muxi-X/muxi_auth_service_v2/util/captcha"
 	"github.com/Muxi-X/muxi_auth_service_v2/util/smtpMail"
 	"github.com/gin-gonic/gin"
-	"github.com/lexkong/log"
 	"github.com/spf13/viper"
 )
 
@@ -43,7 +43,7 @@ func GetCaptcha(c *gin.Context) {
 
 	// 协程发送邮件
 	go func() {
-		log.Infof("Start to send email to: %s", email)
+		logx.Infof("Start to send email to: %s", email)
 
 		mailSendErrorChan <- smtpMail.SendMail("muxistudio@qq.com", viper.GetString("authcode"), []string{email}, smtpMail.Content{
 			NickName:    "Muxi Studio: Auth Service",
@@ -52,7 +52,7 @@ func GetCaptcha(c *gin.Context) {
 			Body:        mailContent,
 			ContentType: "Content-Type: text/html; charset=UTF-8",
 		})
-		log.Info("Email sent successful.")
+		logx.Info("Email sent successful.")
 	}()
 
 	captchaToken, err := captcha.GenerateCaptchaToken(captchaCode)

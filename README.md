@@ -207,3 +207,35 @@ Response Data:
     "client_secret": ""
 }
 ```
+
+#### CAS OAuth Callback
+
+当前服务在保留原有“用户名 / 密码 OAuth 授权”流程的同时，也支持基于 CAS 的授权码模式。
+
+客户端需要自行拼接 CAS 登录地址，并将 `service` 参数指向：
+
+```text
+/auth/api/oauth/cas/callback?client_id=...&callback_url=...&token_exp=...
+```
+
+当 CAS 认证成功后，本认证服务会执行以下步骤：
+
+1. 校验 CAS 返回的 ticket
+2. 将 CAS 用户名作为独立的 OAuth subject 使用
+3. 生成 OAuth 授权码
+4. 重定向到 `callback_url?code=...`
+
+## CAS 接入补充说明
+
+为了避免继续把历史 README 的编码问题越改越乱，CAS 适配和本地联调说明已经单独整理到：
+
+[docs/cas-oauth-debug.md](.\docs\cas-oauth-debug.md)
+
+文档里包含：
+
+- CAS callback 的真实处理流程
+- `cas.server_url` 与 `cas.callback_base_url` 的配置含义
+- 本地启动 CAS 与 OAuth 服务的步骤
+- 如何拼接 CAS 登录 URL
+- 如何从授权码继续换取 `access_token`
+- 常见联调报错的排查方法

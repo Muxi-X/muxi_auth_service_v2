@@ -10,13 +10,19 @@ import (
 
 func LoginRequiredMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, err := oauth.ParseRequest(c)
+		principal, err := oauth.ParseRequest(c)
 		if err != nil {
 			handler.SendUnauthorized(c, errno.ErrTokenInvalid, nil, err.Error())
 			c.Abort()
 			return
 		}
-		c.Set("userID", userID)
+		c.Set("principal", principal)
+		if principal.LocalUserID != 0 {
+			c.Set("userID", principal.LocalUserID)
+		}
+		if principal.CASUsername != "" {
+			c.Set("casUsername", principal.CASUsername)
+		}
 
 		c.Next()
 	}
