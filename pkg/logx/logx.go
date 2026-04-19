@@ -1,114 +1,206 @@
 package logx
 
 import (
-	"fmt"
-	"io"
-	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-var logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-	Level: slog.LevelInfo,
-}))
+var (
+	// logger 是当前实际对外提供服务的 sugared logger。
+	// 选择 SugaredLogger 是为了兼容项目现有的 `msg + key/value` 与 `Infof` 两种调用方式。
+	logger = newDefaultLogger()
+)
 
-// InitFromViper 从现有 viper 配置初始化日志系统。
-// 这里使用标准库 slog，减少第三方依赖，同时尽量兼容项目原本的配置字段。
+// newDefaultLogger 创建一个仅输出到标准输出的默认 logger。
+// 即使配置尚未初始化，日志也不会完全丢失。
+func newDefaultLogger() *zap.SugaredLogger {
+	baseLogger := zap.New(zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()),
+		zapcore.AddSync(os.Stdout),
+		zapcore.InfoLevel,
+	))
+	return baseLogger.Sugar()
+}
+
+// InitFromViper 使用现有 viper 配置重建日志系统。
+//
+// 当前实现采用 zap + lumberjack：
+// 1. zap 负责结构化日志与高性能编码
+// 2. lumberjack 负责文件滚动
+//
+// 这样我们就不需要自己维护复杂的文件句柄和滚动细节。
 func InitFromViper() error {
-	writers := buildWriters(viper.GetString("log.writers"), viper.GetString("log.logger_file"))
+	encoder := buildEncoder(viper.GetBool("log.log_format_text"))
+	syncer := buildWriteSyncer()
 	level := parseLevel(viper.GetString("log.logger_level"))
 
-	var handler slog.Handler
-	if viper.GetBool("log.log_format_text") {
-		handler = slog.NewTextHandler(writers, &slog.HandlerOptions{Level: level})
-	} else {
-		handler = slog.NewJSONHandler(writers, &slog.HandlerOptions{Level: level})
-	}
+	baseLogger := zap.New(
+		zapcore.NewCore(encoder, syncer, level),
+		zap.AddCaller(),
+	)
 
-	logger = slog.New(handler)
-	slog.SetDefault(logger)
+	oldLogger := logger
+	logger = baseLogger.Sugar()
+
+	if oldLogger != nil {
+		_ = oldLogger.Sync()
+	}
+	_ = baseLogger.Sync()
 	return nil
 }
 
 func Info(msg string, args ...any) {
-	logger.Info(msg, args...)
+	current := getLogger()
+	if len(args) == 0 {
+		current.Info(msg)
+		return
+	}
+	current.Infow(msg, sanitizeKeyValues(args)...)
 }
 
 func Infof(format string, args ...any) {
-	logger.Info(fmt.Sprintf(format, args...))
+	getLogger().Infof(format, args...)
 }
 
 func Warn(msg string, args ...any) {
-	logger.Warn(msg, args...)
+	current := getLogger()
+	if len(args) == 0 {
+		current.Warn(msg)
+		return
+	}
+	current.Warnw(msg, sanitizeKeyValues(args)...)
 }
 
 func Error(msg string, args ...any) {
-	logger.Error(msg, args...)
+	current := getLogger()
+	if len(args) == 0 {
+		current.Error(msg)
+		return
+	}
+	current.Errorw(msg, sanitizeKeyValues(args)...)
 }
 
 func Errorf(format string, args ...any) {
-	logger.Error(fmt.Sprintf(format, args...))
+	getLogger().Errorf(format, args...)
 }
 
 func Fatal(msg string, args ...any) {
-	logger.Error(msg, args...)
+	current := getLogger()
+	if len(args) == 0 {
+		current.Error(msg)
+	} else {
+		current.Errorw(msg, sanitizeKeyValues(args)...)
+	}
+	_ = current.Sync()
 	os.Exit(1)
 }
 
-func parseLevel(raw string) slog.Level {
+// getLogger 返回当前可用的 logger。
+func getLogger() *zap.SugaredLogger {
+	return logger
+}
+
+// parseLevel 把历史配置里的字符串等级转换成 zap 等级。
+func parseLevel(raw string) zapcore.Level {
 	switch strings.ToUpper(strings.TrimSpace(raw)) {
 	case "DEBUG":
-		return slog.LevelDebug
+		return zapcore.DebugLevel
 	case "WARN", "WARNING":
-		return slog.LevelWarn
+		return zapcore.WarnLevel
 	case "ERROR":
-		return slog.LevelError
+		return zapcore.ErrorLevel
 	default:
-		return slog.LevelInfo
+		return zapcore.InfoLevel
 	}
 }
 
-func buildWriters(rawWriters string, logFile string) io.Writer {
-	names := strings.Split(strings.TrimSpace(rawWriters), ",")
-	writers := make([]io.Writer, 0, len(names))
+// buildEncoder 根据现有配置决定使用文本格式还是 JSON 格式。
+func buildEncoder(useText bool) zapcore.Encoder {
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.TimeKey = "time"
+	encoderConfig.LevelKey = "level"
+	encoderConfig.MessageKey = "msg"
+	encoderConfig.CallerKey = "caller"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+
+	if useText {
+		return zapcore.NewConsoleEncoder(encoderConfig)
+	}
+	return zapcore.NewJSONEncoder(encoderConfig)
+}
+
+// buildWriteSyncer 根据配置拼装输出目标。
+// 当配置里包含 file 时，底层由 lumberjack 托管滚动策略。
+func buildWriteSyncer() zapcore.WriteSyncer {
+	names := strings.Split(strings.TrimSpace(viper.GetString("log.writers")), ",")
+	syncers := make([]zapcore.WriteSyncer, 0, len(names))
 
 	for _, name := range names {
 		switch strings.TrimSpace(name) {
 		case "stdout":
-			writers = append(writers, os.Stdout)
+			syncers = append(syncers, zapcore.AddSync(os.Stdout))
 		case "file":
-			if fileWriter := openLogFile(logFile); fileWriter != nil {
-				writers = append(writers, fileWriter)
+			rotatingWriter := newRollingFileWriter()
+			if rotatingWriter != nil {
+				syncers = append(syncers, zapcore.AddSync(rotatingWriter))
 			}
 		}
 	}
 
-	if len(writers) == 0 {
-		return os.Stdout
+	if len(syncers) == 0 {
+		return zapcore.AddSync(os.Stdout)
 	}
-	if len(writers) == 1 {
-		return writers[0]
-	}
-	return io.MultiWriter(writers...)
+	return zapcore.NewMultiWriteSyncer(syncers...)
 }
 
-func openLogFile(logFile string) io.Writer {
-	logFile = strings.TrimSpace(logFile)
-	if logFile == "" {
+// newRollingFileWriter 使用现有配置创建一个 lumberjack logger。
+// 这样日志文件的滚动和底层文件打开/关闭逻辑都交给成熟库维护。
+func newRollingFileWriter() *lumberjack.Logger {
+	filename := strings.TrimSpace(viper.GetString("log.logger_file"))
+	if filename == "" {
 		return nil
 	}
 
-	if err := os.MkdirAll(filepath.Dir(logFile), 0o755); err != nil {
-		return nil
+	maxSize := viper.GetInt("log.log_rotate_size")
+	if maxSize <= 0 {
+		maxSize = 100
 	}
 
-	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
-	if err != nil {
-		return nil
+	maxBackups := viper.GetInt("log.log_backup_count")
+	if maxBackups < 0 {
+		maxBackups = 0
 	}
 
-	return file
+	maxAge := viper.GetInt("log.log_rotate_date")
+	if maxAge < 0 {
+		maxAge = 0
+	}
+
+	return &lumberjack.Logger{
+		Filename:   filename,
+		MaxSize:    maxSize,
+		MaxBackups: maxBackups,
+		MaxAge:     maxAge,
+		Compress:   false,
+	}
+}
+
+// sanitizeKeyValues 保证传给 zap 的 key/value 列表是成对的。
+// 如果调用方传了奇数个参数，就自动补一个占位 key，避免日志直接报错。
+func sanitizeKeyValues(args []any) []any {
+	if len(args)%2 == 0 {
+		return args
+	}
+
+	result := make([]any, 0, len(args)+1)
+	result = append(result, args...)
+	result = append(result, "(missing)")
+	return result
 }
