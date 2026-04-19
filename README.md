@@ -229,7 +229,7 @@ Response Data:
 
 为了避免继续把历史 README 的编码问题越改越乱，CAS 适配和本地联调说明已经单独整理到：
 
-[docs/cas-oauth-debug.md](.\docs\cas-oauth-debug.md)
+[docs/cas-oauth-debug.md](./docs/cas-oauth-debug.md)
 
 文档里包含：
 
