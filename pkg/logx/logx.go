@@ -91,13 +91,13 @@ func Errorf(format string, args ...any) {
 
 func Fatal(msg string, args ...any) {
 	current := getLogger()
-	if len(args) == 0 {
-		current.Error(msg)
-	} else {
-		current.Errorw(msg, sanitizeKeyValues(args)...)
-	}
 	_ = current.Sync()
-	os.Exit(1)
+	if len(args) == 0 {
+		current.Fatal(msg)
+	} else {
+		current.Fatalw(msg, sanitizeKeyValues(args)...)
+	}
+
 }
 
 // getLogger 返回当前可用的 logger。
