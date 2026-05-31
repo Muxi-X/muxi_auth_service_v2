@@ -105,6 +105,44 @@ func TestCASOAuthFlowHandleCallbackSuccess(t *testing.T) {
 	}
 }
 
+func TestCASOAuthFlowHandleCallbackKeepsServiceParamsWhenTicketComesFirst(t *testing.T) {
+	flow := NewCASOAuthFlow(
+		"",
+		fakeCASTicketValidator{
+			validateFunc: func(serviceURL *url.URL, ticket string) (*cas.AuthenticationResponse, error) {
+				if ticket != "ST-1" {
+					t.Fatalf("expected ticket ST-1, got %s", ticket)
+				}
+				if got := serviceURL.RawQuery; got != "callback_url=https%3A%2F%2Fclient.example.com%2Fcb&client_id=client-a&token_exp=120" {
+					t.Fatalf("unexpected service raw query: %s", got)
+				}
+				if got := serviceURL.Query().Get("ticket"); got != "" {
+					t.Fatalf("service url should not include ticket, got %s", got)
+				}
+				return &cas.AuthenticationResponse{User: "casuser"}, nil
+			},
+		},
+		fakeAuthorizeCodeGenerator{
+			generateFunc: func(ctx context.Context, request AuthorizeCodeRequest) (AuthorizeCodeResult, error) {
+				return AuthorizeCodeResult{
+					Code:      "auth-code-1",
+					ExpiresIn: 30 * time.Minute,
+				}, nil
+			},
+		},
+	)
+
+	req := httptest.NewRequest(http.MethodGet, "http://oauth.example.com/auth/api/oauth/cas/callback?ticket=ST-1&callback_url=https%3A%2F%2Fclient.example.com%2Fcb&client_id=client-a&token_exp=120", nil)
+
+	result, err := flow.HandleCallback(context.Background(), req)
+	if err != nil {
+		t.Fatalf("HandleCallback() returned error: %v", err)
+	}
+	if result.RedirectURL != "https://client.example.com/cb?code=auth-code-1" {
+		t.Fatalf("unexpected redirect url: %s", result.RedirectURL)
+	}
+}
+
 // TestCASOAuthFlowHandleCallbackRejectsMissingTicket 确保 callback 参数不完整时会被明确拒绝，
 // 避免服务继续执行到更深层逻辑后才报出难懂的错误。
 func TestCASOAuthFlowHandleCallbackRejectsMissingTicket(t *testing.T) {

@@ -151,14 +151,13 @@ func (f *CASOAuthFlow) buildServiceURL(request *http.Request) (*url.URL, error) 
 	// request.RequestURI 包含了最原始的路径和参数
 	rawURI := request.RequestURI
 
-	// 2. 暴力切除 ticket
-	// 我们寻找 "?ticket=" 或 "&ticket=" 出现的位置
-	cleanURI := rawURI
-	if idx := strings.Index(rawURI, "&ticket="); idx != -1 {
-		cleanURI = rawURI[:idx]
-	} else if idx := strings.Index(rawURI, "?ticket="); idx != -1 {
-		cleanURI = rawURI[:idx]
+	// 2. 从原始 query 中移除 ticket，同时保留其他参数的原始顺序和编码。
+	// CAS 回调会把 ticket 放到 query 的任意位置，不能简单截断字符串。
+	parsedClean, err := url.ParseRequestURI(rawURI)
+	if err != nil {
+		return nil, err
 	}
+	parsedClean.RawQuery = removeQueryParam(parsedClean.RawQuery, "ticket")
 
 	// 3. 构建返回的 URL 对象
 	// 依然保留你之前的 Scheme 和 Host 处理逻辑，确保验证请求发往正确的地址
@@ -176,15 +175,36 @@ func (f *CASOAuthFlow) buildServiceURL(request *http.Request) (*url.URL, error) 
 		host = u.Host
 	}
 
-	// 重新解析切好的路径和参数
-	parsedClean, _ := url.Parse(cleanURI)
-
 	return &url.URL{
 		Scheme:   scheme,
 		Host:     host,
 		Path:     parsedClean.Path,
 		RawQuery: parsedClean.RawQuery, // 这里拿到的就是完全没被重排过的原始 Query 字符串
 	}, nil
+}
+
+func removeQueryParam(rawQuery, key string) string {
+	if rawQuery == "" {
+		return ""
+	}
+
+	parts := strings.Split(rawQuery, "&")
+	filtered := parts[:0]
+	for _, part := range parts {
+		if part == "" {
+			continue
+		}
+
+		paramKey := part
+		if idx := strings.Index(part, "="); idx != -1 {
+			paramKey = part[:idx]
+		}
+		if paramKey == key {
+			continue
+		}
+		filtered = append(filtered, part)
+	}
+	return strings.Join(filtered, "&")
 }
 
 // parseOptionalTokenExp 用来兼容现有 OAuth 接口的 token_exp 参数语义。
