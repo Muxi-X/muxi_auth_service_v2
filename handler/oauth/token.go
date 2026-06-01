@@ -29,6 +29,7 @@ type AccessTokenResponse struct {
 //
 //	client_secret:
 //	code:
+//	redirect_uri:
 func Token(c *gin.Context) {
 	grantType, ok := c.GetQuery("grant_type")
 	if !ok || grantType != "authorization_code" {
@@ -53,6 +54,7 @@ func Token(c *gin.Context) {
 		ClientSecret: clientSecret,
 		Request:      c.Request,
 		Code:         code,
+		RedirectURI:  c.PostForm("redirect_uri"),
 		// UserID:    userID, 在生成token时根据code获取，userID会被加入token的claim中
 	}
 
