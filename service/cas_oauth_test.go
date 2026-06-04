@@ -10,6 +10,8 @@ import (
 	"time"
 
 	cas "gopkg.in/cas.v2"
+	oauth2 "gopkg.in/oauth2.v4"
+	"gopkg.in/oauth2.v4/models"
 )
 
 // fakeCASTicketValidator 用于在测试里替换真实 CAS 服务，
@@ -30,6 +32,14 @@ type fakeAuthorizeCodeGenerator struct {
 
 func (f fakeAuthorizeCodeGenerator) GenerateAuthorizeCode(ctx context.Context, request AuthorizeCodeRequest) (AuthorizeCodeResult, error) {
 	return f.generateFunc(ctx, request)
+}
+
+type fakeOAuthClientDomainResolver struct {
+	getFunc func(domain string) (oauth2.ClientInfo, error)
+}
+
+func (f fakeOAuthClientDomainResolver) GetByDomain(domain string) (oauth2.ClientInfo, error) {
+	return f.getFunc(domain)
 }
 
 // TestCASOAuthFlowHandleCallbackSuccess 验证整条 CAS 回调成功路径：
@@ -140,6 +150,79 @@ func TestCASOAuthFlowHandleCallbackKeepsServiceParamsWhenTicketComesFirst(t *tes
 	}
 	if result.RedirectURL != "https://client.example.com/cb?code=auth-code-1" {
 		t.Fatalf("unexpected redirect url: %s", result.RedirectURL)
+	}
+}
+
+func TestCASOAuthFlowHandleCallbackRetriesCASLoginWhenClientIDMissing(t *testing.T) {
+	casServerURL, err := url.Parse("https://account.example.edu/cas")
+	if err != nil {
+		t.Fatalf("parse cas server url failed: %v", err)
+	}
+
+	var resolvedDomain string
+	flow := NewCASOAuthFlowWithClientResolver(
+		"https://pass.example.com",
+		casServerURL,
+		fakeCASTicketValidator{
+			validateFunc: func(serviceURL *url.URL, ticket string) (*cas.AuthenticationResponse, error) {
+				t.Fatalf("ticket validator should not be called when client_id is missing")
+				return nil, nil
+			},
+		},
+		fakeAuthorizeCodeGenerator{
+			generateFunc: func(ctx context.Context, request AuthorizeCodeRequest) (AuthorizeCodeResult, error) {
+				t.Fatalf("code generator should not be called when client_id is missing")
+				return AuthorizeCodeResult{}, nil
+			},
+		},
+		fakeOAuthClientDomainResolver{
+			getFunc: func(domain string) (oauth2.ClientInfo, error) {
+				resolvedDomain = domain
+				if domain != "forum-dev.muxistudio.xyz" {
+					return nil, nil
+				}
+				return &models.Client{ID: "client-from-domain"}, nil
+			},
+		},
+	)
+
+	req := httptest.NewRequest(http.MethodGet, "https://pass.example.com/auth/api/oauth/cas/callback?ticket=ST-2&callback_url=https://forum-dev.muxistudio.xyz/login/student-oauth&token_exp=7200", nil)
+
+	result, err := flow.HandleCallback(context.Background(), req)
+	if err != nil {
+		t.Fatalf("HandleCallback() returned error: %v", err)
+	}
+
+	if resolvedDomain != "forum-dev.muxistudio.xyz" {
+		t.Fatalf("expected resolver domain forum-dev.muxistudio.xyz, got %s", resolvedDomain)
+	}
+
+	loginURL, err := url.Parse(result.RedirectURL)
+	if err != nil {
+		t.Fatalf("parse retry redirect url failed: %v", err)
+	}
+	if loginURL.Scheme != "https" || loginURL.Host != "account.example.edu" || loginURL.Path != "/cas/login" {
+		t.Fatalf("unexpected retry redirect url: %s", result.RedirectURL)
+	}
+
+	serviceURL, err := url.Parse(loginURL.Query().Get("service"))
+	if err != nil {
+		t.Fatalf("parse retry service url failed: %v", err)
+	}
+	if serviceURL.Scheme != "https" || serviceURL.Host != "pass.example.com" || serviceURL.Path != "/auth/api/oauth/cas/callback" {
+		t.Fatalf("unexpected retry service url: %s", serviceURL.String())
+	}
+	if serviceURL.Query().Get("ticket") != "" {
+		t.Fatalf("retry service url should not include old ticket, got %s", serviceURL.Query().Get("ticket"))
+	}
+	if serviceURL.Query().Get("client_id") != "client-from-domain" {
+		t.Fatalf("expected client id client-from-domain, got %s", serviceURL.Query().Get("client_id"))
+	}
+	if serviceURL.Query().Get("callback_url") != "https://forum-dev.muxistudio.xyz/login/student-oauth" {
+		t.Fatalf("unexpected callback url: %s", serviceURL.Query().Get("callback_url"))
+	}
+	if serviceURL.Query().Get("token_exp") != "7200" {
+		t.Fatalf("expected token_exp 7200, got %s", serviceURL.Query().Get("token_exp"))
 	}
 }
 

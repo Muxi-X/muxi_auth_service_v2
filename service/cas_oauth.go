@@ -38,6 +38,11 @@ type AuthorizeCodeGenerator interface {
 	GenerateAuthorizeCode(ctx context.Context, request AuthorizeCodeRequest) (AuthorizeCodeResult, error)
 }
 
+// OAuthClientDomainResolver 负责根据业务回调域名反查已注册的 OAuth 客户端。
+type OAuthClientDomainResolver interface {
+	GetByDomain(domain string) (oauth2.ClientInfo, error)
+}
+
 // AuthorizeCodeRequest 描述生成 auth code 所需的最小输入。
 type AuthorizeCodeRequest struct {
 	ClientID       string
@@ -64,6 +69,8 @@ type CASOAuthFlow struct {
 	callBackBaseURL string //这个其实是当前服务的域名,为什么需要这个呢?因为没办法直接从请求中获取到域名,但是cas验证是需要校验整个service的完整性的,所以需要域名
 	ticketValidator CASTicketValidator
 	codeGenerator   AuthorizeCodeGenerator
+	casServerURL    *url.URL
+	clientResolver  OAuthClientDomainResolver
 }
 
 // NewCASOAuthFlow 创建一条可测试、可替换依赖的 CAS -> OAuth 回调流程。
@@ -72,10 +79,34 @@ func NewCASOAuthFlow(
 	ticketValidator CASTicketValidator,
 	codeGenerator AuthorizeCodeGenerator,
 ) *CASOAuthFlow {
+	return NewCASOAuthFlowWithClientResolver(
+		callBackBaseURL,
+		nil,
+		ticketValidator,
+		codeGenerator,
+		nil,
+	)
+}
+
+func NewCASOAuthFlowWithClientResolver(
+	callBackBaseURL string,
+	casServerURL *url.URL,
+	ticketValidator CASTicketValidator,
+	codeGenerator AuthorizeCodeGenerator,
+	clientResolver OAuthClientDomainResolver,
+) *CASOAuthFlow {
+	var casServerURLCopy *url.URL
+	if casServerURL != nil {
+		copiedURL := *casServerURL
+		casServerURLCopy = &copiedURL
+	}
+
 	return &CASOAuthFlow{
 		callBackBaseURL: strings.TrimRight(callBackBaseURL, "/"),
 		ticketValidator: ticketValidator,
 		codeGenerator:   codeGenerator,
+		casServerURL:    casServerURLCopy,
+		clientResolver:  clientResolver,
 	}
 }
 
@@ -91,15 +122,22 @@ func (f *CASOAuthFlow) HandleCallback(ctx context.Context, request *http.Request
 	if ticket == "" {
 		return nil, ErrMissingCASTicket
 	}
-	// 获取用户传输的 client_id
-	clientID := strings.TrimSpace(request.URL.Query().Get("client_id"))
-	if clientID == "" {
-		return nil, ErrMissingOAuthClientID
-	}
 	// 获取用户传输的重定向 url
 	callbackURL := strings.TrimSpace(request.URL.Query().Get("callback_url"))
 	if callbackURL == "" {
 		return nil, ErrMissingCallbackURL
+	}
+	// 获取用户传输的 client_id
+	clientID := strings.TrimSpace(request.URL.Query().Get("client_id"))
+	if clientID == "" {
+		retryURL, err := f.buildCASLoginRetryURL(request, callbackURL)
+		if err != nil {
+			return nil, err
+		}
+
+		return &CASCallbackResult{
+			RedirectURL: retryURL,
+		}, nil
 	}
 	// 构建完整的登陆url,为什么要携带这个呢?
 	serviceURL, err := f.buildServiceURL(request)
@@ -144,6 +182,112 @@ func (f *CASOAuthFlow) HandleCallback(ctx context.Context, request *http.Request
 	}, nil
 }
 
+// buildCASLoginRetryURL 兼容 CAS 短信二次认证后偶发丢失 client_id 的回调。
+// 这里不能直接消费当前 ticket，因为 ticket 绑定的是缺 client_id 的 service URL；
+// 正确做法是反查业务域名对应的 client_id，再让 CAS 用已有登录态签发一张新 ticket。
+func (f *CASOAuthFlow) buildCASLoginRetryURL(request *http.Request, callbackURL string) (string, error) {
+	clientID, err := f.resolveClientIDByCallbackURL(callbackURL)
+	if err != nil {
+		return "", err
+	}
+
+	serviceURL, err := f.buildRetryServiceURL(request, clientID, callbackURL)
+	if err != nil {
+		return "", fmt.Errorf("%w: %v", ErrMissingOAuthClientID, err)
+	}
+
+	if f.casServerURL == nil || f.casServerURL.String() == "" {
+		return "", fmt.Errorf("%w: cas server url is not configured", ErrMissingOAuthClientID)
+	}
+
+	loginURL := *f.casServerURL
+	loginURL.Path = strings.TrimRight(loginURL.Path, "/") + "/login"
+	query := loginURL.Query()
+	query.Set("service", serviceURL.String())
+	loginURL.RawQuery = query.Encode()
+
+	return loginURL.String(), nil
+}
+
+func (f *CASOAuthFlow) resolveClientIDByCallbackURL(callbackURL string) (string, error) {
+	if f.clientResolver == nil {
+		return "", fmt.Errorf("%w: oauth client resolver is not configured", ErrMissingOAuthClientID)
+	}
+
+	parsedCallbackURL, err := url.Parse(callbackURL)
+	if err != nil || parsedCallbackURL.Host == "" {
+		return "", fmt.Errorf("%w: invalid callback url", ErrMissingOAuthClientID)
+	}
+
+	var lastErr error
+	for _, domain := range callbackDomainCandidates(parsedCallbackURL) {
+		clientInfo, err := f.clientResolver.GetByDomain(domain)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if clientInfo == nil || strings.TrimSpace(clientInfo.GetID()) == "" {
+			continue
+		}
+
+		return strings.TrimSpace(clientInfo.GetID()), nil
+	}
+
+	if lastErr != nil {
+		return "", fmt.Errorf("%w: cannot resolve oauth client for callback domain %s: %v", ErrMissingOAuthClientID, parsedCallbackURL.Host, lastErr)
+	}
+
+	return "", fmt.Errorf("%w: callback domain %s is not registered", ErrMissingOAuthClientID, parsedCallbackURL.Host)
+}
+
+func callbackDomainCandidates(parsedURL *url.URL) []string {
+	candidates := make([]string, 0, 3)
+	addCandidate := func(domain string) {
+		domain = strings.TrimSpace(domain)
+		if domain == "" {
+			return
+		}
+		for _, candidate := range candidates {
+			if candidate == domain {
+				return
+			}
+		}
+		candidates = append(candidates, domain)
+	}
+
+	addCandidate(parsedURL.Host)
+	addCandidate(strings.ToLower(parsedURL.Host))
+
+	hostname := parsedURL.Hostname()
+	port := parsedURL.Port()
+	if port != "" && ((parsedURL.Scheme == "https" && port == "443") || (parsedURL.Scheme == "http" && port == "80")) {
+		addCandidate(hostname)
+		addCandidate(strings.ToLower(hostname))
+	}
+
+	return candidates
+}
+
+func (f *CASOAuthFlow) buildRetryServiceURL(request *http.Request, clientID, callbackURL string) (*url.URL, error) {
+	parsedURI, err := url.ParseRequestURI(request.RequestURI)
+	if err != nil {
+		return nil, err
+	}
+
+	query := request.URL.Query()
+	query.Del("ticket")
+	query.Set("client_id", clientID)
+	query.Set("callback_url", callbackURL)
+
+	scheme, host := f.callbackSchemeAndHost(request)
+	return &url.URL{
+		Scheme:   scheme,
+		Host:     host,
+		Path:     parsedURI.Path,
+		RawQuery: query.Encode(),
+	}, nil
+}
+
 // buildServiceURL 会构造出与 CAS 当初签发 ticket 时一致的 service URL。
 // 注意这里必须剔除 ticket 本身，否则 serviceValidate 时会因为 service 不一致而失败。
 func (f *CASOAuthFlow) buildServiceURL(request *http.Request) (*url.URL, error) {
@@ -161,6 +305,17 @@ func (f *CASOAuthFlow) buildServiceURL(request *http.Request) (*url.URL, error) 
 
 	// 3. 构建返回的 URL 对象
 	// 依然保留你之前的 Scheme 和 Host 处理逻辑，确保验证请求发往正确的地址
+	scheme, host := f.callbackSchemeAndHost(request)
+
+	return &url.URL{
+		Scheme:   scheme,
+		Host:     host,
+		Path:     parsedClean.Path,
+		RawQuery: parsedClean.RawQuery, // 这里拿到的就是完全没被重排过的原始 Query 字符串
+	}, nil
+}
+
+func (f *CASOAuthFlow) callbackSchemeAndHost(request *http.Request) (string, string) {
 	var scheme string
 	if request.TLS != nil || request.Header.Get("X-Forwarded-Proto") == "https" {
 		scheme = "https"
@@ -175,12 +330,7 @@ func (f *CASOAuthFlow) buildServiceURL(request *http.Request) (*url.URL, error) 
 		host = u.Host
 	}
 
-	return &url.URL{
-		Scheme:   scheme,
-		Host:     host,
-		Path:     parsedClean.Path,
-		RawQuery: parsedClean.RawQuery, // 这里拿到的就是完全没被重排过的原始 Query 字符串
-	}, nil
+	return scheme, host
 }
 
 func removeQueryParam(rawQuery, key string) string {
@@ -287,10 +437,16 @@ func NewDefaultCASOAuthFlow() (*CASOAuthFlow, error) {
 	}
 
 	validator := cas.NewServiceTicketValidator(http.DefaultClient, casServerURL)
+	var clientResolver OAuthClientDomainResolver
+	if pkgoauth.OauthServer != nil {
+		clientResolver = pkgoauth.OauthServer.ClientStore
+	}
 
-	return NewCASOAuthFlow(
+	return NewCASOAuthFlowWithClientResolver(
 		viper.GetString("cas.callback_base_url"),
+		casServerURL,
 		&defaultCASTicketValidator{validator: validator},
 		&defaultAuthorizeCodeGenerator{},
+		clientResolver,
 	), nil
 }

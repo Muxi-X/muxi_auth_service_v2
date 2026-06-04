@@ -84,6 +84,16 @@ CAS 登录完成后，会回调到：
 6. 复用现有 OAuth 发码逻辑生成授权码
 7. 重定向到 `callback_url?code=...`
 
+如果 CAS 在短信二次认证后回调时只带回 `ticket` 和 `callback_url`，没有带回 `client_id`，服务端会进入兼容流程：
+
+1. 从 `callback_url` 解析业务域名
+2. 按该域名从已注册 OAuth client 中反查 `client_id`
+3. 重新拼出带 `client_id` 的 CAS callback service URL
+4. 302 跳转到 `cas.server_url` 的 `/login?service=...`
+5. CAS 在已有登录态下重新签发一张绑定正确 service URL 的 ticket
+
+这一步不会消费原来那张缺 `client_id` 的 ticket，因为 CAS ticket 与 service URL 绑定，直接拿它去校验带 `client_id` 的 service 会失败。
+
 ### 2.4 与本地用户体系的关系
 
 当前实现里，CAS 用户身份已经与原来的本地 `users.id` 解耦：
@@ -283,6 +293,16 @@ curl -X POST "http://localhost:8083/auth/api/oauth/token?grant_type=authorizatio
 1. `callback_url` 是否传对了
 2. 业务系统是否拦截了 302 跳转
 3. 最终地址是否已经变成 `callback_url?code=...`
+
+### 6.4 短信二次认证后 missing oauth client id
+
+如果回调地址类似：
+
+```text
+/auth/api/oauth/cas/callback?ticket=...&callback_url=https://example.com/login
+```
+
+说明 CAS 回调丢了 `client_id`。当前服务会尝试从 `callback_url` 的域名反查 OAuth client，并重新跳回 CAS 登录入口获取新 ticket。若仍然报错，优先检查该业务域名是否已经通过 `/auth/api/oauth/store` 注册过 OAuth client。
 
 ## 7. 推荐的本地联调组合
 
