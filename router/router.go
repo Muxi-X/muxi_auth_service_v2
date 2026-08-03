@@ -46,13 +46,19 @@ func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 		authRouter.GET("/oauth/cas/callback", oauth.CASCallback)
 		authRouter.POST("/oauth/token", oauth.Token)
 		authRouter.POST("/oauth/token/refresh", oauth.Refresh)
-		authRouter.POST("/oauth/store", oauth.Store)
+		authRouter.POST("/oauth/store", middleware.AdminRequiredMiddleware(), oauth.AdminStore)
 	}
 
 	userRouter := g.Group("/auth/api/user")
 	userRouter.Use(middleware.LoginRequiredMiddleware())
 	{
 		userRouter.GET("", user.Get)
+	}
+
+	adminRouter := g.Group("/auth/api/admin")
+	adminRouter.Use(middleware.AdminRequiredMiddleware())
+	{
+		adminRouter.POST("/oauth/store", oauth.AdminStore)
 	}
 
 	// The health check handlers

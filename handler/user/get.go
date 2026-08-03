@@ -11,7 +11,7 @@ import (
 func Get(c *gin.Context) {
 	principal := c.MustGet("principal").(oauth.AccessPrincipal)
 
-	// CAS 主体不再映射回本地 users 表，直接返回独立的 CAS 用户信息视图。
+	// 兼容旧的 cas:<username> access token；新签发的 CAS token 已统一为本地 user id。
 	if principal.CASUsername != "" {
 		handler.SendResponse(c, nil, oauth.BuildCASUserInfo(principal.CASUsername))
 		return

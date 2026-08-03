@@ -36,6 +36,16 @@ func SendUnauthorized(c *gin.Context, err error, data interface{}, cause string)
 	})
 }
 
+func SendForbidden(c *gin.Context, err error, data interface{}, cause string) {
+	code, message := errno.DecodeErr(err)
+	logx.Info(message, "X-Request-Id", util.GetReqID(c), "cause", cause)
+	c.JSON(http.StatusForbidden, Response{
+		Code:    code,
+		Message: message + ": " + cause,
+		Data:    data,
+	})
+}
+
 func SendBadRequest(c *gin.Context, err error, data interface{}, cause string) {
 	code, message := errno.DecodeErr(err)
 	logx.Info(message, "X-Request-Id", util.GetReqID(c), "cause", cause)

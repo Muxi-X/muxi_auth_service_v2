@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
+	"github.com/Muxi-X/muxi_auth_service_v2/model"
+	"github.com/Muxi-X/muxi_auth_service_v2/pkg/constvar"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/oauth"
 
@@ -26,4 +28,47 @@ func LoginRequiredMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func AdminRequiredMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		principal, err := oauth.ParseRequest(c)
+		if err != nil {
+			handler.SendUnauthorized(c, errno.ErrTokenInvalid, nil, err.Error())
+			c.Abort()
+			return
+		}
+		if principal.LocalUserID == 0 {
+			handler.SendForbidden(c, errno.ErrPermissionDenied, nil, "admin api only accepts local user access tokens")
+			c.Abort()
+			return
+		}
+
+		user, err := model.GetUserByID(principal.LocalUserID)
+		if err != nil || !canManageOAuthClients(user) {
+			handler.SendForbidden(c, errno.ErrPermissionDenied, nil, "admin permission is required")
+			c.Abort()
+			return
+		}
+
+		c.Set("principal", principal)
+		c.Set("userID", principal.LocalUserID)
+		c.Set("adminUser", user)
+		c.Next()
+	}
+}
+
+func canManageOAuthClients(user *model.UserModel) bool {
+	if user == nil {
+		return false
+	}
+	if user.IsAdmin() {
+		return true
+	}
+
+	role, err := model.GetRoleByID(user.RoleID)
+	if err != nil || role == nil {
+		return false
+	}
+	return role.Permissions&constvar.PermissionOAuthClientManage != 0
 }

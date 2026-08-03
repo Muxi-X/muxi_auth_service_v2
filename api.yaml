@@ -385,12 +385,18 @@ paths:
     post:
       tags:
         - "oauth"
-      summary: "register client with domain"
+      summary: "admin registers oauth client with approved domain"
+      description: "Create an OAuth client after administrator approval. The request must include an OAuth access token for a local admin user. CAS principals are not allowed. The domain must be an HTTPS origin without path, query, fragment, localhost, IP address, or wildcard."
       consumes:
         - "application/json"
       produces:
         - "application/json"
       parameters:
+        - in: header
+          name: token
+          description: "OAuth access token for a local user with OAuth client management permission."
+          required: true
+          type: string
         - in: body
           name: data
           schema:
@@ -404,13 +410,17 @@ paths:
           description: ok
           schema:
             $ref: "#/definitions/ClientStore"
+        401:
+          description: "Invalid or missing access token."
+        403:
+          description: "Admin permission is required."
 
   /oauth/cas/callback:
     get:
       tags:
         - "oauth"
       summary: "handle CAS callback and redirect with oauth code"
-      description: "This endpoint is used as the CAS service callback. The client should first redirect the browser to CAS login with a service URL that points to this endpoint and includes client_id, callback_url and optional token_exp. After CAS login succeeds, this service validates the CAS ticket, converts the CAS username into an independent OAuth subject in the form of cas:<username>, generates an OAuth authorization code, and finally redirects to callback_url with the code query parameter."
+      description: "This endpoint is used as the CAS service callback. The client should first redirect the browser to CAS login with a service URL that points to this endpoint and includes client_id, callback_url and optional token_exp. callback_url must be HTTPS and its origin must exactly match the registered OAuth client domain. After CAS login succeeds, this service validates the CAS ticket, resolves or creates a local user through user_identities, generates an OAuth authorization code whose subject is the local users.id, and finally redirects to callback_url with the code query parameter."
       parameters:
         - in: query
           name: ticket
@@ -441,6 +451,40 @@ paths:
           description: "Invalid, expired or already-consumed CAS ticket."
         404:
           description: "Reserved for historical compatibility. The current implementation no longer maps CAS users back to the local users table."
+
+  /admin/oauth/store:
+    post:
+      tags:
+        - "oauth"
+      summary: "admin registers oauth client with approved domain"
+      description: "Create an OAuth client after administrator approval. The request must include an OAuth access token for a local admin user. CAS principals are not allowed. The domain must be an HTTPS origin without path, query, fragment, localhost, IP address, or wildcard."
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: header
+          name: token
+          description: "OAuth access token for a local user with OAuth client management permission."
+          required: true
+          type: string
+        - in: body
+          name: data
+          schema:
+            required:
+              - domain
+            properties:
+              domain:
+                type: string
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: "#/definitions/ClientStore"
+        401:
+          description: "Invalid or missing access token."
+        403:
+          description: "Admin permission is required."
 
   /user:
     get:

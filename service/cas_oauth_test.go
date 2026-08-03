@@ -42,14 +42,23 @@ func (f fakeOAuthClientDomainResolver) GetByDomain(domain string) (oauth2.Client
 	return f.getFunc(domain)
 }
 
+type fakeCASUserResolver struct {
+	resolveFunc func(ctx context.Context, authenticationResponse *cas.AuthenticationResponse) (uint64, error)
+}
+
+func (f fakeCASUserResolver) ResolveCASUser(ctx context.Context, authenticationResponse *cas.AuthenticationResponse) (uint64, error) {
+	return f.resolveFunc(ctx, authenticationResponse)
+}
+
 // TestCASOAuthFlowHandleCallbackSuccess 验证整条 CAS 回调成功路径：
 // 1. 正确使用当前 callback URL 验票
 // 2. 找到本地用户映射
 // 3. 复用 OAuth 层生成 auth code
 // 4. 拼装最终的回跳地址
 func TestCASOAuthFlowHandleCallbackSuccess(t *testing.T) {
-	flow := NewCASOAuthFlow(
+	flow := NewCASOAuthFlowWithResolvers(
 		"",
+		nil,
 		fakeCASTicketValidator{
 			validateFunc: func(serviceURL *url.URL, ticket string) (*cas.AuthenticationResponse, error) {
 				if serviceURL.Scheme != "http" || serviceURL.Host != "oauth.example.com" || serviceURL.Path != "/auth/api/oauth/cas/callback" {
@@ -80,8 +89,8 @@ func TestCASOAuthFlowHandleCallbackSuccess(t *testing.T) {
 				if request.ClientID != "client-a" {
 					t.Fatalf("expected client id client-a, got %s", request.ClientID)
 				}
-				if request.UserID != "cas:casuser" {
-					t.Fatalf("expected user id cas:casuser, got %s", request.UserID)
+				if request.UserID != "42" {
+					t.Fatalf("expected user id 42, got %s", request.UserID)
 				}
 				if request.CallbackURL != "https://client.example.com/cb" {
 					t.Fatalf("expected callback url https://client.example.com/cb, got %s", request.CallbackURL)
@@ -94,6 +103,15 @@ func TestCASOAuthFlowHandleCallbackSuccess(t *testing.T) {
 					Code:      "auth-code-1",
 					ExpiresIn: 30 * time.Minute,
 				}, nil
+			},
+		},
+		nil,
+		fakeCASUserResolver{
+			resolveFunc: func(ctx context.Context, authenticationResponse *cas.AuthenticationResponse) (uint64, error) {
+				if authenticationResponse.User != "casuser" {
+					t.Fatalf("expected cas user casuser, got %s", authenticationResponse.User)
+				}
+				return 42, nil
 			},
 		},
 	)
@@ -181,7 +199,10 @@ func TestCASOAuthFlowHandleCallbackRetriesCASLoginWhenClientIDMissing(t *testing
 				if domain != "forum-dev.muxistudio.xyz" {
 					return nil, nil
 				}
-				return &models.Client{ID: "client-from-domain"}, nil
+				return &models.Client{
+					ID:     "client-from-domain",
+					Domain: "https://forum-dev.muxistudio.xyz",
+				}, nil
 			},
 		},
 	)
@@ -223,6 +244,74 @@ func TestCASOAuthFlowHandleCallbackRetriesCASLoginWhenClientIDMissing(t *testing
 	}
 	if serviceURL.Query().Get("token_exp") != "7200" {
 		t.Fatalf("expected token_exp 7200, got %s", serviceURL.Query().Get("token_exp"))
+	}
+}
+
+func TestCASOAuthFlowHandleCallbackRejectsCallbackForAnotherClient(t *testing.T) {
+	flow := NewCASOAuthFlowWithClientResolver(
+		"",
+		nil,
+		fakeCASTicketValidator{
+			validateFunc: func(serviceURL *url.URL, ticket string) (*cas.AuthenticationResponse, error) {
+				t.Fatalf("ticket validator should not be called when callback client does not match")
+				return nil, nil
+			},
+		},
+		fakeAuthorizeCodeGenerator{
+			generateFunc: func(ctx context.Context, request AuthorizeCodeRequest) (AuthorizeCodeResult, error) {
+				t.Fatalf("code generator should not be called when callback client does not match")
+				return AuthorizeCodeResult{}, nil
+			},
+		},
+		fakeOAuthClientDomainResolver{
+			getFunc: func(domain string) (oauth2.ClientInfo, error) {
+				return &models.Client{
+					ID:     "client-b",
+					Domain: "https://client.example.com",
+				}, nil
+			},
+		},
+	)
+
+	req := httptest.NewRequest(http.MethodGet, "http://oauth.example.com/auth/api/oauth/cas/callback?ticket=ST-1&client_id=client-a&callback_url=https%3A%2F%2Fclient.example.com%2Fcb", nil)
+
+	_, err := flow.HandleCallback(context.Background(), req)
+	if !errors.Is(err, ErrMissingOAuthClientID) {
+		t.Fatalf("expected ErrMissingOAuthClientID, got %v", err)
+	}
+}
+
+func TestCASOAuthFlowHandleCallbackRejectsUnsafeCallbackURL(t *testing.T) {
+	flow := NewCASOAuthFlowWithClientResolver(
+		"",
+		nil,
+		fakeCASTicketValidator{
+			validateFunc: func(serviceURL *url.URL, ticket string) (*cas.AuthenticationResponse, error) {
+				t.Fatalf("ticket validator should not be called for unsafe callback_url")
+				return nil, nil
+			},
+		},
+		fakeAuthorizeCodeGenerator{
+			generateFunc: func(ctx context.Context, request AuthorizeCodeRequest) (AuthorizeCodeResult, error) {
+				t.Fatalf("code generator should not be called for unsafe callback_url")
+				return AuthorizeCodeResult{}, nil
+			},
+		},
+		fakeOAuthClientDomainResolver{
+			getFunc: func(domain string) (oauth2.ClientInfo, error) {
+				return &models.Client{
+					ID:     "client-a",
+					Domain: "https://client.example.com",
+				}, nil
+			},
+		},
+	)
+
+	req := httptest.NewRequest(http.MethodGet, "http://oauth.example.com/auth/api/oauth/cas/callback?ticket=ST-1&client_id=client-a&callback_url=http%3A%2F%2Fclient.example.com%2Fcb", nil)
+
+	_, err := flow.HandleCallback(context.Background(), req)
+	if !errors.Is(err, ErrMissingCallbackURL) {
+		t.Fatalf("expected ErrMissingCallbackURL, got %v", err)
 	}
 }
 

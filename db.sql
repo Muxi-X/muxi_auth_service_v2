@@ -47,3 +47,15 @@ CREATE TABLE `users` (
   KEY `role_id` (`role_id`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `user_identities` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `provider` varchar(32) NOT NULL,
+  `provider_subject` varchar(164) NOT NULL,
+  `email` varchar(164) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `provider_subject` (`provider`, `provider_subject`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `user_identities_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

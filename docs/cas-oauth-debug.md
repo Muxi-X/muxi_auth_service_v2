@@ -80,8 +80,8 @@ CAS 登录完成后，会回调到：
 2. 根据当前请求还原出当初传给 CAS 的原始 `service` URL
 3. 使用 `cas.server_url` 指定的 CAS 服务执行 ticket 校验
 4. 从 CAS 校验结果中拿到用户名
-5. 将该用户名编码成独立 subject，格式为 `cas:<username>`
-6. 复用现有 OAuth 发码逻辑生成授权码
+5. 通过 `user_identities` 将 CAS 用户解析成本地 `users.id`，不存在时自动创建普通本地用户并绑定
+6. 复用现有 OAuth 发码逻辑生成授权码，OAuth subject 使用本地 `users.id`
 7. 重定向到 `callback_url?code=...`
 
 如果 CAS 在短信二次认证后回调时只带回 `ticket` 和 `callback_url`，没有带回 `client_id`，服务端会进入兼容流程：
@@ -96,13 +96,14 @@ CAS 登录完成后，会回调到：
 
 ### 2.4 与本地用户体系的关系
 
-当前实现里，CAS 用户身份已经与原来的本地 `users.id` 解耦：
+当前实现里，CAS 用户身份已经整合进本地 `users` 体系：
 
-- 不再要求将 CAS 用户映射回本地用户表
-- 不再依赖原来的本地账号密码体系
-- CAS 登录成功后生成的 OAuth subject 为 `cas:<username>`
+- `user_identities` 表保存 `provider = cas` 与 CAS username 到本地 `users.id` 的绑定
+- 首次 CAS 登录会自动创建 `role_id = 3` 的普通本地用户
+- CAS 登录成功后生成的 OAuth subject 为本地 `users.id`
+- 历史 `cas:<username>` access token 仍保留解析兼容，但新 token 不再这样签发
 
-这意味着 CAS 用户和本地用户是两套独立身份来源。
+这意味着 CAS 用户可以复用本地用户资料、角色和权限体系。
 
 ## 3. 关键配置
 
@@ -189,12 +190,17 @@ http://localhost:8083
 
 ### 5.3 准备一个 OAuth 客户端
 
-如果你还没有 `client_id` / `client_secret`，可以先调用客户端注册接口：
+`/auth/api/oauth/store` 客户端注册接口已恢复为管理员接口。如果你还没有 `client_id` / `client_secret`，请联系管理员完成域名与回调地址审核，并携带管理员 OAuth access token 创建 OAuth 客户端。
+
+登记域名必须是 HTTPS origin，例如 `https://forum-dev.muxistudio.xyz`；不允许 HTTP、localhost、IP、通配符、路径、query 或 fragment。CAS OAuth 的 `callback_url` 必须使用 HTTPS，且 origin 必须与登记域名完全一致。
+
+调试命令示例：
 
 ```bash
 curl -X POST "http://localhost:8083/auth/api/oauth/store" \
   -H "Content-Type: application/json" \
-  -d "{\"domain\":\"http://localhost:8081\"}"
+  -H "token: ${ADMIN_ACCESS_TOKEN}" \
+  -d "{\"domain\":\"https://forum-dev.muxistudio.xyz\"}"
 ```
 
 返回示例：
