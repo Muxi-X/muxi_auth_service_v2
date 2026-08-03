@@ -63,6 +63,7 @@ func (r *defaultCASUserResolver) ResolveCASUser(_ context.Context, authenticatio
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
 		return 0, err
 	}
 	return user.Id, nil

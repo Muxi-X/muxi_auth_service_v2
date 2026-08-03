@@ -30,6 +30,8 @@ func TestNormalizeOAuthClientDomainRejectsUnsafeValues(t *testing.T) {
 		"https://*.muxixyz.com",
 		"https://pass.muxixyz.com/callback",
 		"https://pass.muxixyz.com?debug=true",
+		"https://pass.muxixyz.com:abc",
+		"https://pass.muxixyz.com:70000",
 	}
 
 	for _, tt := range tests {
@@ -49,6 +51,7 @@ func TestValidateOAuthCallbackURLForDomain(t *testing.T) {
 		"https://evil.muxixyz.com/auth/callback",
 		"https://pass.muxixyz.com.evil.example/auth/callback",
 		"https://pass.muxixyz.com/auth/callback#token",
+		"https://pass.muxixyz.com:abc/auth/callback",
 	}
 
 	for _, tt := range tests {

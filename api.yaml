@@ -450,7 +450,7 @@ paths:
         401:
           description: "Invalid, expired or already-consumed CAS ticket."
         404:
-          description: "Reserved for historical compatibility. The current implementation no longer maps CAS users back to the local users table."
+          description: "Reserved for historical compatibility. The current implementation resolves or creates local users for CAS identities."
 
   /admin/oauth/store:
     post:

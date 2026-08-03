@@ -1,6 +1,8 @@
 package oauth
 
 import (
+	"strings"
+
 	"github.com/Muxi-X/muxi_auth_service_v2/handler"
 	"github.com/Muxi-X/muxi_auth_service_v2/pkg/errno"
 	. "github.com/Muxi-X/muxi_auth_service_v2/pkg/oauth"
@@ -44,8 +46,13 @@ func AdminStore(c *gin.Context) {
 	}
 
 	// 域名是否已存在
-	if _, err := OauthServer.ClientStore.GetByDomain(domainLookupKey); err != nil {
-		handler.SendBadRequest(c, errno.ErrBadRequest, nil, err.Error())
+	clientInfo, err := OauthServer.ClientStore.GetByDomain(domainLookupKey)
+	if err != nil {
+		handler.SendError(c, errno.ErrOAuthClientCreate, nil, err.Error())
+		return
+	}
+	if clientInfo != nil && strings.TrimSpace(clientInfo.GetID()) != "" {
+		handler.SendBadRequest(c, errno.ErrBadRequest, nil, "Domain has already been registered.")
 		return
 	}
 

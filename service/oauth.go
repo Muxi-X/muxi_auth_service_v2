@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/Muxi-X/muxi_auth_service_v2/util"
@@ -99,6 +100,15 @@ func parseOAuthURL(raw string) (*url.URL, error) {
 	port := u.Port()
 	if hostname == "" {
 		return nil, fmt.Errorf("url host is required")
+	}
+	if strings.Contains(u.Host, ":") && port == "" {
+		return nil, fmt.Errorf("url port is invalid")
+	}
+	if port != "" {
+		portNumber, err := strconv.Atoi(port)
+		if err != nil || portNumber < 1 || portNumber > 65535 {
+			return nil, fmt.Errorf("url port is invalid")
+		}
 	}
 	if hostname == "localhost" || strings.HasSuffix(hostname, ".localhost") {
 		return nil, fmt.Errorf("localhost is not allowed")
