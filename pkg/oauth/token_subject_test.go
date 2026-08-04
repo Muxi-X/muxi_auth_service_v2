@@ -2,8 +2,8 @@ package oauth
 
 import "testing"
 
-// TestBuildCASSubject 确保 CAS 身份会被编码为独立 subject，
-// 避免和原有本地数值 user_id 混淆。
+// TestBuildCASSubject 确保历史 CAS subject 仍保持 cas: 前缀，
+// 避免兼容旧 token 时和本地数值 user_id 混淆。
 func TestBuildCASSubject(t *testing.T) {
 	if subject := BuildCASSubject("alice"); subject != "cas:alice" {
 		t.Fatalf("expected cas:alice, got %s", subject)
@@ -12,7 +12,7 @@ func TestBuildCASSubject(t *testing.T) {
 
 // TestResolvePrincipalFromTokenLocalAndCAS 覆盖主体解析的两条主路径：
 // 1. 原有本地数值 user id
-// 2. 新增的 cas:username 外部身份
+// 2. 历史 cas:username 外部身份
 func TestResolvePrincipalFromTokenLocalAndCAS(t *testing.T) {
 	localPrincipal, err := ResolvePrincipalFromSubject("42")
 	if err != nil {

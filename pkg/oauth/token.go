@@ -14,15 +14,16 @@ import (
 const casSubjectPrefix = "cas:"
 
 // AccessPrincipal 表示从 access token 中解析出来的认证主体。
-// 本地登录与 CAS 登录都会落到这里，但它们的身份来源是分开的。
+// 新签发的本地登录与 CAS 登录 token 都会解析成本地 users.id；
+// cas:<username> 仅用于兼容历史 CAS token。
 type AccessPrincipal struct {
 	Subject     string
 	LocalUserID uint64
 	CASUsername string
 }
 
-// BuildCASSubject 会把 CAS 用户名编码成独立 subject。
-// 使用显式前缀可以避免和原有本地数值 user_id 冲突。
+// BuildCASSubject 会把 CAS 用户名编码成历史 CAS subject。
+// 新 token 已统一使用本地 users.id；该格式仅用于兼容旧 token。
 func BuildCASSubject(casUsername string) string {
 	return casSubjectPrefix + casUsername
 }
@@ -77,7 +78,7 @@ func ResolvePrincipalFromSubject(subject string) (AccessPrincipal, error) {
 }
 
 // ResolvePrincipalFromToken 会把 token subject 解析为统一主体信息。
-// 数字 subject 视为原有本地用户，cas: 前缀视为 CAS 用户。
+// 数字 subject 视为本地用户，cas: 前缀仅兼容历史 CAS token。
 func ResolvePrincipalFromToken(token string) (AccessPrincipal, error) {
 	subject, err := ResolveAccessToken(token)
 	if err != nil {
@@ -86,8 +87,7 @@ func ResolvePrincipalFromToken(token string) (AccessPrincipal, error) {
 	return ResolvePrincipalFromSubject(subject)
 }
 
-// BuildCASUserInfo 会为 CAS 主体构造一个最小用户信息响应。
-// CAS 身份与本地 users 表脱离，因此这里只返回独立的 CAS 用户资料视图。
+// BuildCASUserInfo 会为历史 CAS 主体构造一个最小用户信息响应。
 func BuildCASUserInfo(casUsername string) *model.UserInfo {
 	return &model.UserInfo{
 		Username: casUsername,

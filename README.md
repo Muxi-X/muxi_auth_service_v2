@@ -97,7 +97,7 @@ Frontend              Backend                 Auth server
 
 #### 客户端注册
 
-使用 [客户端注册 API](#客户端注册与存储) （`.../oauth/store`） 进行客户端注册，获取 `client_id` 和 `client_secret`。
+客户端注册接口（`.../oauth/store`）已恢复为管理员接口。需要新增 OAuth 客户端时，应由管理员审核业务域名与回调地址后，携带管理员 OAuth access token 创建客户端信息。
 
 #### OAuth APIs
 
@@ -191,7 +191,9 @@ Response Data:
 
 | Path | Method | Header |
 | ---  | ---    | ---    |
-| /auth/api/oauth/store | POST | - |
+| /auth/api/oauth/store | POST | token |
+
+该接口要求 OAuth access token 对应本地用户，且用户 `role_id = 2` 或角色 permissions 命中 OAuth client 管理权限。登记域名必须是 HTTPS origin，例如 `https://pass.muxixyz.com`；不允许 HTTP、localhost、IP、通配符、路径、query 或 fragment。CAS OAuth 的 `callback_url` 也必须使用 HTTPS，且 origin 必须与客户端登记域名完全一致。
 
 Body Data:
 ```json
@@ -221,8 +223,8 @@ Response Data:
 当 CAS 认证成功后，本认证服务会执行以下步骤：
 
 1. 校验 CAS 返回的 ticket
-2. 将 CAS 用户名作为独立的 OAuth subject 使用
-3. 生成 OAuth 授权码
+2. 通过 `user_identities` 将 CAS 用户解析或自动创建为本地用户
+3. 以本地 `users.id` 作为 OAuth subject 生成授权码
 4. 重定向到 `callback_url?code=...`
 
 ## CAS 接入补充说明

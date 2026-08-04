@@ -6,10 +6,11 @@ var (
 	InternalServerError = &Errno{Code: 10001, Message: "Internal server error"}
 	ErrBind             = &Errno{Code: 10002, Message: "Error occurred while binding the request body to the struct."}
 
-	ErrValidation = &Errno{Code: 20001, Message: "Validation failed."}
-	ErrDatabase   = &Errno{Code: 20002, Message: "Database error."}
-	ErrToken      = &Errno{Code: 20003, Message: "Error occurred while generating token."}
-	ErrBadRequest = &Errno{Code: 20004, Message: "Error occurred while payload is not bad."}
+	ErrValidation       = &Errno{Code: 20001, Message: "Validation failed."}
+	ErrDatabase         = &Errno{Code: 20002, Message: "Database error."}
+	ErrToken            = &Errno{Code: 20003, Message: "Error occurred while generating token."}
+	ErrBadRequest       = &Errno{Code: 20004, Message: "Error occurred while payload is not bad."}
+	ErrPermissionDenied = &Errno{Code: 20005, Message: "Permission denied."}
 
 	// user errors
 	ErrEncrypt              = &Errno{Code: 20101, Message: "Error occurred while encrypting the user password."}
@@ -37,9 +38,11 @@ var (
 	ErrUserUpdate = &Errno{Code: 30002, Message: "The (*UserModel)Update() method error."}
 
 	// oauth error
-	ErrGenerateAuthCode    = &Errno{Code: 40001, Message: "Error occurred while generating auth code."}
-	ErrGenerateAccessToken = &Errno{Code: 40002, Message: "Error occurred while generating access token."}
-	ErrRefreshToken        = &Errno{Code: 40003, Message: "Error occurred while refreshing token."}
-	ErrDomain              = &Errno{Code: 40004, Message: "The domain is invalid."}
-	ErrInvalidCASTicket    = &Errno{Code: 40005, Message: "The CAS ticket was invalid."}
+	ErrGenerateAuthCode                = &Errno{Code: 40001, Message: "Error occurred while generating auth code."}
+	ErrGenerateAccessToken             = &Errno{Code: 40002, Message: "Error occurred while generating access token."}
+	ErrRefreshToken                    = &Errno{Code: 40003, Message: "Error occurred while refreshing token."}
+	ErrDomain                          = &Errno{Code: 40004, Message: "The domain is invalid."}
+	ErrInvalidCASTicket                = &Errno{Code: 40005, Message: "The CAS ticket was invalid."}
+	ErrOAuthClientRegistrationDisabled = &Errno{Code: 40006, Message: "OAuth client registration is temporarily disabled."}
+	ErrOAuthClientCreate               = &Errno{Code: 40007, Message: "Error occurred while creating oauth client."}
 )

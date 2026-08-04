@@ -43,6 +43,11 @@ type OAuthClientDomainResolver interface {
 	GetByDomain(domain string) (oauth2.ClientInfo, error)
 }
 
+// CASUserResolver 负责把 CAS 返回的外部身份解析为本地 users.id。
+type CASUserResolver interface {
+	ResolveCASUser(ctx context.Context, authenticationResponse *cas.AuthenticationResponse) (uint64, error)
+}
+
 // AuthorizeCodeRequest 描述生成 auth code 所需的最小输入。
 type AuthorizeCodeRequest struct {
 	ClientID       string
@@ -71,6 +76,7 @@ type CASOAuthFlow struct {
 	codeGenerator   AuthorizeCodeGenerator
 	casServerURL    *url.URL
 	clientResolver  OAuthClientDomainResolver
+	casUserResolver CASUserResolver
 }
 
 // NewCASOAuthFlow 创建一条可测试、可替换依赖的 CAS -> OAuth 回调流程。
@@ -95,6 +101,24 @@ func NewCASOAuthFlowWithClientResolver(
 	codeGenerator AuthorizeCodeGenerator,
 	clientResolver OAuthClientDomainResolver,
 ) *CASOAuthFlow {
+	return NewCASOAuthFlowWithResolvers(
+		callBackBaseURL,
+		casServerURL,
+		ticketValidator,
+		codeGenerator,
+		clientResolver,
+		nil,
+	)
+}
+
+func NewCASOAuthFlowWithResolvers(
+	callBackBaseURL string,
+	casServerURL *url.URL,
+	ticketValidator CASTicketValidator,
+	codeGenerator AuthorizeCodeGenerator,
+	clientResolver OAuthClientDomainResolver,
+	casUserResolver CASUserResolver,
+) *CASOAuthFlow {
 	var casServerURLCopy *url.URL
 	if casServerURL != nil {
 		copiedURL := *casServerURL
@@ -107,6 +131,7 @@ func NewCASOAuthFlowWithClientResolver(
 		codeGenerator:   codeGenerator,
 		casServerURL:    casServerURLCopy,
 		clientResolver:  clientResolver,
+		casUserResolver: casUserResolver,
 	}
 }
 
@@ -139,6 +164,9 @@ func (f *CASOAuthFlow) HandleCallback(ctx context.Context, request *http.Request
 			RedirectURL: retryURL,
 		}, nil
 	}
+	if err := f.validateCallbackURLForClient(callbackURL, clientID); err != nil {
+		return nil, err
+	}
 	// 构建完整的登陆url,为什么要携带这个呢?
 	serviceURL, err := f.buildServiceURL(request)
 	if err != nil {
@@ -156,14 +184,15 @@ func (f *CASOAuthFlow) HandleCallback(ctx context.Context, request *http.Request
 		return nil, err
 	}
 
-	// 这里直接把 CAS 用户名编码为独立 subject，
-	// 不再尝试映射回本地 users.id，从而保证 CAS 身份和原有本地用户体系完全解耦。
-	casSubject := pkgoauth.BuildCASSubject(authenticationResponse.User)
+	userID, err := f.resolveCASLocalUserID(ctx, authenticationResponse)
+	if err != nil {
+		return nil, err
+	}
 
 	// 签发code
 	codeResult, err := f.codeGenerator.GenerateAuthorizeCode(ctx, AuthorizeCodeRequest{
 		ClientID:       clientID,
-		UserID:         casSubject,
+		UserID:         userID,
 		CallbackURL:    callbackURL,
 		AccessTokenExp: accessTokenExp,
 	})
@@ -180,6 +209,18 @@ func (f *CASOAuthFlow) HandleCallback(ctx context.Context, request *http.Request
 		Code:        codeResult.Code,
 		RedirectURL: redirectURL,
 	}, nil
+}
+
+func (f *CASOAuthFlow) resolveCASLocalUserID(ctx context.Context, authenticationResponse *cas.AuthenticationResponse) (string, error) {
+	if f.casUserResolver == nil {
+		return pkgoauth.BuildCASSubject(authenticationResponse.User), nil
+	}
+
+	userID, err := f.casUserResolver.ResolveCASUser(ctx, authenticationResponse)
+	if err != nil {
+		return "", err
+	}
+	return strconv.FormatUint(userID, 10), nil
 }
 
 // buildCASLoginRetryURL 兼容 CAS 短信二次认证后偶发丢失 client_id 的回调。
@@ -210,13 +251,39 @@ func (f *CASOAuthFlow) buildCASLoginRetryURL(request *http.Request, callbackURL 
 }
 
 func (f *CASOAuthFlow) resolveClientIDByCallbackURL(callbackURL string) (string, error) {
+	clientInfo, err := f.resolveClientInfoByCallbackURL(callbackURL)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(clientInfo.GetID()), nil
+}
+
+func (f *CASOAuthFlow) validateCallbackURLForClient(callbackURL, clientID string) error {
 	if f.clientResolver == nil {
-		return "", fmt.Errorf("%w: oauth client resolver is not configured", ErrMissingOAuthClientID)
+		return nil
+	}
+
+	clientInfo, err := f.resolveClientInfoByCallbackURL(callbackURL)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(clientInfo.GetID()) != strings.TrimSpace(clientID) {
+		return fmt.Errorf("%w: callback domain belongs to another oauth client", ErrMissingOAuthClientID)
+	}
+	if err := ValidateOAuthCallbackURLForDomain(clientInfo.GetDomain(), callbackURL); err != nil {
+		return fmt.Errorf("%w: %v", ErrMissingCallbackURL, err)
+	}
+	return nil
+}
+
+func (f *CASOAuthFlow) resolveClientInfoByCallbackURL(callbackURL string) (oauth2.ClientInfo, error) {
+	if f.clientResolver == nil {
+		return nil, fmt.Errorf("%w: oauth client resolver is not configured", ErrMissingOAuthClientID)
 	}
 
 	parsedCallbackURL, err := url.Parse(callbackURL)
 	if err != nil || parsedCallbackURL.Host == "" {
-		return "", fmt.Errorf("%w: invalid callback url", ErrMissingOAuthClientID)
+		return nil, fmt.Errorf("%w: invalid callback url", ErrMissingOAuthClientID)
 	}
 
 	var lastErr error
@@ -229,15 +296,18 @@ func (f *CASOAuthFlow) resolveClientIDByCallbackURL(callbackURL string) (string,
 		if clientInfo == nil || strings.TrimSpace(clientInfo.GetID()) == "" {
 			continue
 		}
+		if err := ValidateOAuthCallbackURLForDomain(clientInfo.GetDomain(), callbackURL); err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrMissingCallbackURL, err)
+		}
 
-		return strings.TrimSpace(clientInfo.GetID()), nil
+		return clientInfo, nil
 	}
 
 	if lastErr != nil {
-		return "", fmt.Errorf("%w: cannot resolve oauth client for callback domain %s: %v", ErrMissingOAuthClientID, parsedCallbackURL.Host, lastErr)
+		return nil, fmt.Errorf("%w: cannot resolve oauth client for callback domain %s: %v", ErrMissingOAuthClientID, parsedCallbackURL.Host, lastErr)
 	}
 
-	return "", fmt.Errorf("%w: callback domain %s is not registered", ErrMissingOAuthClientID, parsedCallbackURL.Host)
+	return nil, fmt.Errorf("%w: callback domain %s is not registered", ErrMissingOAuthClientID, parsedCallbackURL.Host)
 }
 
 func callbackDomainCandidates(parsedURL *url.URL) []string {
@@ -448,5 +518,10 @@ func NewDefaultCASOAuthFlow() (*CASOAuthFlow, error) {
 		&defaultCASTicketValidator{validator: validator},
 		&defaultAuthorizeCodeGenerator{},
 		clientResolver,
-	), nil
+	).withCASUserResolver(&defaultCASUserResolver{}), nil
+}
+
+func (f *CASOAuthFlow) withCASUserResolver(casUserResolver CASUserResolver) *CASOAuthFlow {
+	f.casUserResolver = casUserResolver
+	return f
 }

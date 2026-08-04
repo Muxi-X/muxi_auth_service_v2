@@ -25,6 +25,12 @@ func (role *Role) Update() error {
 	return DB.Self.Save(role).Error
 }
 
+func GetRoleByID(id uint64) (*Role, error) {
+	role := &Role{}
+	d := DB.Self.Where("id = ?", id).First(role)
+	return role, d.Error
+}
+
 func (role *Role) GetUsers(offset, limit int) ([]*UserModel, uint64, error) {
 	if limit == 0 {
 		limit = constvar.DefaultLimit
