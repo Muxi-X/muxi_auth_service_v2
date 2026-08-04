@@ -94,7 +94,7 @@ func (r *defaultCASUserResolver) ResolveCASUser(_ context.Context, authenticatio
 func findExistingLocalUserForCAS(tx *gorm.DB, casUsername, email string) (*model.UserModel, error) {
 	if email != "" {
 		user := &model.UserModel{}
-		err := tx.Where("email = ? AND username NOT LIKE ?", email, "cas\\_%").Order("id ASC").First(user).Error
+		err := tx.Where("email = ? AND SUBSTR(username, 1, 4) <> ?", email, "cas_").Order("id ASC").First(user).Error
 		if err == nil {
 			return user, nil
 		}
@@ -104,7 +104,7 @@ func findExistingLocalUserForCAS(tx *gorm.DB, casUsername, email string) (*model
 	}
 
 	user := &model.UserModel{}
-	err := tx.Where("username = ?", casUsername).Order("id ASC").First(user).Error
+	err := tx.Where("username = ? AND SUBSTR(username, 1, 4) <> ?", casUsername, "cas_").Order("id ASC").First(user).Error
 	if err == nil {
 		return user, nil
 	}
