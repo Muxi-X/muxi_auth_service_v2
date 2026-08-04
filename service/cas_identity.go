@@ -38,6 +38,28 @@ func (r *defaultCASUserResolver) ResolveCASUser(_ context.Context, authenticatio
 		return 0, tx.Error
 	}
 
+	if existingUser, err := findExistingLocalUserForCAS(tx, casUsername, email); err != nil {
+		tx.Rollback()
+		return 0, err
+	} else if existingUser != nil {
+		identity = &model.UserIdentity{
+			UserID:          existingUser.Id,
+			Provider:        casIdentityProvider,
+			ProviderSubject: casUsername,
+			Email:           email,
+		}
+		if err := tx.Create(identity).Error; err != nil {
+			tx.Rollback()
+			return 0, err
+		}
+
+		if err := tx.Commit().Error; err != nil {
+			tx.Rollback()
+			return 0, err
+		}
+		return existingUser.Id, nil
+	}
+
 	user := &model.UserModel{
 		Email:        email,
 		Username:     BuildCASLocalUsername(casUsername),
@@ -67,6 +89,29 @@ func (r *defaultCASUserResolver) ResolveCASUser(_ context.Context, authenticatio
 		return 0, err
 	}
 	return user.Id, nil
+}
+
+func findExistingLocalUserForCAS(tx *gorm.DB, casUsername, email string) (*model.UserModel, error) {
+	if email != "" {
+		user := &model.UserModel{}
+		err := tx.Where("email = ? AND username NOT LIKE ?", email, "cas\\_%").Order("id ASC").First(user).Error
+		if err == nil {
+			return user, nil
+		}
+		if !gorm.IsRecordNotFoundError(err) {
+			return nil, err
+		}
+	}
+
+	user := &model.UserModel{}
+	err := tx.Where("username = ?", casUsername).Order("id ASC").First(user).Error
+	if err == nil {
+		return user, nil
+	}
+	if !gorm.IsRecordNotFoundError(err) {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func BuildCASLocalUsername(casUsername string) string {
